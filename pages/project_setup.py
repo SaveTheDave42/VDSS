@@ -11,7 +11,7 @@ from io import BytesIO
 import math
 # Import folium plugins properly
 from folium import plugins
-# Import folium GeoJsonPopup directly
+# Import folium features directly
 from folium.features import GeoJsonPopup
 
 # Define API URL
@@ -20,18 +20,60 @@ API_URL = "http://localhost:8000"
 def show_project_setup():
     """Show the project setup page"""
     # Create tabs for the project setup steps
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "1. Upload File", 
-        "2. Project Name", 
-        "3. Define Area", 
-        "4. Define Routes", 
-        "5. Define Map Bounds"
+    tab1, tab2, tab3 = st.tabs([
+        "1. Project Name", 
+        "2. Upload File", 
+        "3. Upload GeoJSON Data"
     ])
     
-    # Step 1: Upload file (CSV or Excel)
+    # Step 1: Define project name (moved to first step)
     with tab1:
+        st.subheader("Define Project Name")
+        
+        # Get project name with auto-check on Enter
+        project_name = st.text_input("Project Name", value="", key="project_name_input", 
+                                      help="Press Enter to set the project name")
+        
+        # If name was entered and Enter was pressed (detected by change in input value)
+        if project_name:
+            try:
+                # Try to call API to check if project name exists
+                response = requests.get(f"{API_URL}/api/projects/check_name/{project_name}")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("exists", False):
+                        st.error(f"A project with the name '{project_name}' already exists. Please choose a different name.")
+                    else:
+                        st.success(f"Project name '{project_name}' is available!")
+                        # Store the project name in session state
+                        st.session_state.project_name = project_name
+                else:
+                    # For development, proceed anyway if API endpoint doesn't exist yet
+                    st.session_state.project_name = project_name
+                    st.success(f"Project name set to: {project_name}")
+                    st.info("Note: Project name uniqueness check not available.")
+            except Exception as e:
+                # If API call fails, still set the name but inform the user
+                st.session_state.project_name = project_name
+                st.success(f"Project name set to: {project_name}")
+                st.info("Note: Could not verify if this name is already in use.")
+        
+        # Next step button
+        if "project_name" in st.session_state:
+            if st.button("Next: Upload Project File"):
+                # Just for visual feedback
+                pass
+    
+    # Step 2: Upload file (CSV or Excel) - kept as before
+    with tab2:
         st.subheader("Upload Project File")
         
+        # Only allow if project name is defined
+        if "project_name" not in st.session_state:
+            st.info("Please define a project name in the previous step first.")
+            return
+            
         # Help text
         st.markdown("""
         ### Datei-Anforderungen
@@ -150,354 +192,152 @@ def show_project_setup():
         
         # Next step button
         if "excel_file" in st.session_state:
-            if st.button("Weiter: Projektname definieren"):
-                # Automatically switch to next tab
+            if st.button("Weiter: GeoJSON Daten hochladen"):
+                # Just for visual feedback
                 pass
     
-    # Step 2: Define project name
-    with tab2:
-        st.subheader("Define Project Name")
-        
-        # Only allow if Excel is uploaded
-        if "excel_file" not in st.session_state:
-            st.info("Please upload a file in the previous step first.")
-        else:
-            project_name = st.text_input("Project Name", value="", key="project_name_input")
-            
-            if project_name:
-                # Store the project name in session state
-                st.session_state.project_name = project_name
-                st.success(f"Project name set to: {project_name}")
-            
-            # Next step button
-            if "project_name" in st.session_state:
-                if st.button("Next: Define Construction Site Area"):
-                    # Automatically switch to next tab
-                    pass
-    
-    # Step 3: Define construction site polygon
+    # Step 3: Upload GeoJSON files (replaces drawing steps)
     with tab3:
-        st.subheader("Define Construction Site Area")
+        st.subheader("Upload GeoJSON Data")
         
         # Only allow if previous steps are completed
-        if "excel_file" not in st.session_state or "project_name" not in st.session_state:
+        if "project_name" not in st.session_state or "excel_file" not in st.session_state:
             st.info("Please complete the previous steps first.")
-        else:
-            st.markdown("""
-            Draw a polygon on the map to define the construction site area:
+            return
             
-            1. Click the polygon tool (shape icon) in the map
-            2. Click on the map to add points for your polygon
-            3. Close the polygon by clicking on the first point
-            4. Click "Save Polygon" when you're done
-            """)
-            
-            # Initialize or get the map center
-            if "map_center" not in st.session_state:
-                st.session_state.map_center = [47.3769, 8.5417]  # Default: Zurich
-            
-            # Create a map centered on the location
-            m = folium.Map(location=st.session_state.map_center, zoom_start=15)
-            
-            # Add the draw control for polygon
-            draw_options = {
-                'polyline': False,
-                'rectangle': False,
-                'circle': False,
-                'marker': False,
-                'circlemarker': False,
-                'polygon': True
-            }
-            
-            draw = folium.plugins.Draw(
-                export=True,
-                position='topleft',
-                draw_options=draw_options,
-            )
-            draw.add_to(m)
-            
-            # Display the map
-            folium_static(m)
-            
-            # Input for manually entering GeoJSON
-            st.markdown("### Or paste GeoJSON polygon data:")
-            geojson_input = st.text_area("GeoJSON Polygon", value="", height=150)
-            
-            # Save button for the polygon
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("Save Polygon"):
-                    # In a real implementation, we would capture the drawn polygon
-                    # For now, we'll use a sample polygon if none is provided
-                    if geojson_input:
-                        try:
-                            polygon_data = json.loads(geojson_input)
-                            st.session_state.polygon = polygon_data
-                            st.success("Polygon saved successfully!")
-                        except json.JSONDecodeError:
-                            st.error("Invalid GeoJSON format. Please check your input.")
-                    else:
-                        # Sample polygon if none is provided
-                        sample_polygon = {
-                            "type": "Polygon",
-                            "coordinates": [
-                                [
-                                    [8.54, 47.375],
-                                    [8.542, 47.375],
-                                    [8.542, 47.378],
-                                    [8.54, 47.378],
-                                    [8.54, 47.375]
-                                ]
-                            ]
-                        }
-                        st.session_state.polygon = sample_polygon
-                        st.success("Sample polygon saved successfully! You can edit it later.")
-            
-            # Next step button
-            if "polygon" in st.session_state:
-                with col2:
-                    if st.button("Next: Define Routes & Waiting Areas"):
-                        # Automatically switch to next tab
-                        pass
-    
-    # Step 4: Define routes and waiting areas
-    with tab4:
-        st.subheader("Define Routes & Waiting Areas")
+        st.markdown("""
+        ### GeoJSON Upload
         
-        # Only allow if previous steps are completed
-        if ("excel_file" not in st.session_state or 
-            "project_name" not in st.session_state or 
-            "polygon" not in st.session_state):
-            st.info("Please complete the previous steps first.")
-        else:
-            st.markdown("""
-            Draw waiting areas and access routes on the map:
-            
-            1. Use the polyline tool to draw access routes
-            2. Use the polygon tool to draw waiting areas
-            3. Click "Save Routes & Areas" when you're done
-            """)
-            
-            # Create a map centered on the polygon centroid
-            polygon_coords = st.session_state.polygon["coordinates"][0]
-            centroid_lon = sum(p[0] for p in polygon_coords) / len(polygon_coords)
-            centroid_lat = sum(p[1] for p in polygon_coords) / len(polygon_coords)
-            
-            m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=15)
-            
-            # Add the existing construction site polygon
-            folium.GeoJson(
-                st.session_state.polygon,
-                name="Construction Site",
-                style_function=lambda x: {"fillColor": "red", "color": "red", "weight": 2, "fillOpacity": 0.4}
-            ).add_to(m)
-            
-            # Add the draw control for routes and areas
-            draw_options = {
-                'polyline': True,
-                'rectangle': False,
-                'circle': False,
-                'marker': False,
-                'circlemarker': False,
-                'polygon': True
-            }
-            
-            draw = folium.plugins.Draw(
-                export=True,
-                position='topleft',
-                draw_options=draw_options,
-            )
-            draw.add_to(m)
-            
-            # Display the map
-            folium_static(m)
-            
-            # Input for manually entering GeoJSON
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("### Waiting Areas GeoJSON:")
-                waiting_areas_input = st.text_area("GeoJSON for Waiting Areas", value="", height=150)
-            
-            with col2:
-                st.markdown("### Access Routes GeoJSON:")
-                access_routes_input = st.text_area("GeoJSON for Access Routes", value="", height=150)
-            
-            # Save button for routes and areas
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("Save Routes & Areas"):
-                    # In a real implementation, we would capture the drawn shapes
-                    # For now, we'll use sample data if none is provided
-                    
-                    # Process waiting areas input
-                    if waiting_areas_input:
-                        try:
-                            waiting_areas_data = json.loads(waiting_areas_input)
-                            st.session_state.waiting_areas = waiting_areas_data
-                        except json.JSONDecodeError:
-                            st.error("Invalid GeoJSON format for waiting areas. Please check your input.")
-                            waiting_areas_data = None
-                    else:
-                        # Sample waiting area if none is provided
-                        waiting_areas_data = [{
-                            "type": "Polygon",
-                            "coordinates": [
-                                [
-                                    [centroid_lon + 0.002, centroid_lat - 0.001],
-                                    [centroid_lon + 0.003, centroid_lat - 0.001],
-                                    [centroid_lon + 0.003, centroid_lat],
-                                    [centroid_lon + 0.002, centroid_lat],
-                                    [centroid_lon + 0.002, centroid_lat - 0.001]
-                                ]
-                            ]
-                        }]
-                    
-                    # Process access routes input
-                    if access_routes_input:
-                        try:
-                            access_routes_data = json.loads(access_routes_input)
-                            st.session_state.access_routes = access_routes_data
-                        except json.JSONDecodeError:
-                            st.error("Invalid GeoJSON format for access routes. Please check your input.")
-                            access_routes_data = None
-                    else:
-                        # Sample access route if none is provided
-                        access_routes_data = [{
-                            "type": "LineString",
-                            "coordinates": [
-                                [centroid_lon - 0.005, centroid_lat - 0.005],
-                                [centroid_lon - 0.002, centroid_lat - 0.002],
-                                [centroid_lon, centroid_lat]
-                            ]
-                        }]
-                    
-                    # Save the data
-                    if waiting_areas_data:
-                        st.session_state.waiting_areas = waiting_areas_data
-                    if access_routes_data:
-                        st.session_state.access_routes = access_routes_data
-                    
-                    st.success("Routes and waiting areas saved successfully!")
-            
-            # Next step button
-            if "waiting_areas" in st.session_state and "access_routes" in st.session_state:
-                with col2:
-                    if st.button("Next: Define Map Bounds"):
-                        # Automatically switch to next tab
-                        pass
-    
-    # Step 5: Define map bounds for simulation
-    with tab5:
-        st.subheader("Define Map Bounds for Simulation")
+        Bitte laden Sie die folgenden GeoJSON-Dateien hoch:
         
-        # Only allow if previous steps are completed
-        if ("excel_file" not in st.session_state or 
-            "project_name" not in st.session_state or 
-            "polygon" not in st.session_state or
-            "waiting_areas" not in st.session_state or 
-            "access_routes" not in st.session_state):
-            st.info("Please complete the previous steps first.")
-        else:
-            st.markdown("""
-            Define the map area for traffic simulation:
+        1. **Baustelle**: Ein Polygon, das den Baustellen-Bereich definiert
+        2. **Route**: LineString(s), die die Zufahrtswege definieren
+        3. **Wartebereich**: Polygon(e), die die Wartebereiche definieren
+        4. **Kartengrenzen**: Ein Polygon, das die Grenzen der Karte für die Simulation definiert
+        """)
+        
+        # File uploaders for each GeoJSON
+        construction_site_file = st.file_uploader("Baustelle (GeoJSON)", type=["json", "geojson"], key="construction_site_upload")
+        routes_file = st.file_uploader("Route (GeoJSON)", type=["json", "geojson"], key="routes_upload")
+        waiting_areas_file = st.file_uploader("Wartebereich (GeoJSON)", type=["json", "geojson"], key="waiting_areas_upload")
+        map_bounds_file = st.file_uploader("Kartengrenzen (GeoJSON)", type=["json", "geojson"], key="map_bounds_upload")
+        
+        # Process and display GeoJSON files
+        geojson_data = {}
+        
+        # Helper function to process GeoJSON files
+        def process_geojson_file(file, key_name):
+            if file is not None:
+                try:
+                    content = file.read()
+                    # Reset file pointer for future reads
+                    file.seek(0)
+                    data = json.loads(content)
+                    geojson_data[key_name] = data
+                    return True
+                except json.JSONDecodeError:
+                    st.error(f"Invalid GeoJSON format in {key_name} file. Please check your file.")
+                except Exception as e:
+                    st.error(f"Error processing {key_name} file: {str(e)}")
+            return False
+        
+        # Process each file
+        site_loaded = process_geojson_file(construction_site_file, "polygon")
+        routes_loaded = process_geojson_file(routes_file, "access_routes")
+        waiting_loaded = process_geojson_file(waiting_areas_file, "waiting_areas")
+        bounds_loaded = process_geojson_file(map_bounds_file, "map_bounds")
+        
+        # Display the map with loaded GeoJSON data
+        if any([site_loaded, routes_loaded, waiting_loaded, bounds_loaded]):
+            st.subheader("Preview Map")
             
-            1. Use the rectangle tool to draw the bounds
-            2. Click "Save Bounds" when you're done
-            """)
+            # Set default map center or use polygon center if available
+            map_center = [47.3769, 8.5417]  # Default: Zurich
+            if "polygon" in geojson_data:
+                try:
+                    # Try to calculate centroid from polygon
+                    if geojson_data["polygon"]["type"] == "Polygon":
+                        polygon_coords = geojson_data["polygon"]["coordinates"][0]
+                        centroid_lon = sum(p[0] for p in polygon_coords) / len(polygon_coords)
+                        centroid_lat = sum(p[1] for p in polygon_coords) / len(polygon_coords)
+                        map_center = [centroid_lat, centroid_lon]
+                except Exception:
+                    # If anything goes wrong, use default center
+                    pass
             
-            # Create a map centered on the polygon centroid
-            polygon_coords = st.session_state.polygon["coordinates"][0]
-            centroid_lon = sum(p[0] for p in polygon_coords) / len(polygon_coords)
-            centroid_lat = sum(p[1] for p in polygon_coords) / len(polygon_coords)
+            m = folium.Map(location=map_center, zoom_start=14)
             
-            m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=14)
-            
-            # Add the existing construction site polygon
-            folium.GeoJson(
-                st.session_state.polygon,
-                name="Construction Site",
-                style_function=lambda x: {"fillColor": "red", "color": "red", "weight": 2, "fillOpacity": 0.4}
-            ).add_to(m)
-            
-            # Add waiting areas
-            for i, area in enumerate(st.session_state.waiting_areas):
+            # Add construction site polygon to map
+            if "polygon" in geojson_data:
                 folium.GeoJson(
-                    area,
-                    name=f"Waiting Area {i+1}",
+                    geojson_data["polygon"],
+                    name="Construction Site",
+                    style_function=lambda x: {"fillColor": "red", "color": "red", "weight": 2, "fillOpacity": 0.4}
+                ).add_to(m)
+            
+            # Add waiting areas to map
+            if "waiting_areas" in geojson_data:
+                folium.GeoJson(
+                    geojson_data["waiting_areas"],
+                    name="Waiting Areas",
                     style_function=lambda x: {"fillColor": "blue", "color": "blue", "weight": 2, "fillOpacity": 0.4}
                 ).add_to(m)
             
-            # Add access routes
-            for i, route in enumerate(st.session_state.access_routes):
+            # Add access routes to map
+            if "access_routes" in geojson_data:
                 folium.GeoJson(
-                    route,
-                    name=f"Access Route {i+1}",
+                    geojson_data["access_routes"],
+                    name="Access Routes",
                     style_function=lambda x: {"color": "green", "weight": 4}
                 ).add_to(m)
             
-            # Add the draw control for bounds
-            draw_options = {
-                'polyline': False,
-                'rectangle': True,
-                'circle': False,
-                'marker': False,
-                'circlemarker': False,
-                'polygon': False
-            }
+            # Add map bounds to map
+            if "map_bounds" in geojson_data:
+                folium.GeoJson(
+                    geojson_data["map_bounds"],
+                    name="Map Bounds",
+                    style_function=lambda x: {"fillColor": "purple", "color": "purple", "weight": 2, "fillOpacity": 0.2}
+                ).add_to(m)
             
-            draw = folium.plugins.Draw(
-                export=True,
-                position='topleft',
-                draw_options=draw_options,
-            )
-            draw.add_to(m)
+            # Add layer control
+            folium.LayerControl().add_to(m)
             
             # Display the map
             folium_static(m)
             
-            # Input for manually entering GeoJSON
-            st.markdown("### Map Bounds GeoJSON:")
-            map_bounds_input = st.text_area("GeoJSON for Map Bounds", value="", height=150)
+            # Save GeoJSON data to session state
+            for key, data in geojson_data.items():
+                st.session_state[key] = data
+        
+        # Create project button - only show if all required files are uploaded
+        all_files_loaded = all([
+            "project_name" in st.session_state,
+            "excel_file" in st.session_state,
+            "polygon" in st.session_state,
+            "access_routes" in st.session_state,
+            "waiting_areas" in st.session_state,
+            "map_bounds" in st.session_state
+        ])
+        
+        if all_files_loaded:
+            if st.button("Create Project"):
+                create_project()
+        else:
+            missing = []
+            if "project_name" not in st.session_state:
+                missing.append("Project Name")
+            if "excel_file" not in st.session_state:
+                missing.append("Project File")
+            if "polygon" not in st.session_state:
+                missing.append("Construction Site GeoJSON")
+            if "access_routes" not in st.session_state:
+                missing.append("Routes GeoJSON")
+            if "waiting_areas" not in st.session_state:
+                missing.append("Waiting Areas GeoJSON")
+            if "map_bounds" not in st.session_state:
+                missing.append("Map Bounds GeoJSON")
             
-            # Save button for bounds
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("Save Bounds"):
-                    # In a real implementation, we would capture the drawn rectangle
-                    # For now, we'll use a sample rectangle if none is provided
-                    if map_bounds_input:
-                        try:
-                            map_bounds_data = json.loads(map_bounds_input)
-                            st.session_state.map_bounds = map_bounds_data
-                            st.success("Map bounds saved successfully!")
-                        except json.JSONDecodeError:
-                            st.error("Invalid GeoJSON format. Please check your input.")
-                    else:
-                        # Sample bounds if none is provided
-                        sample_bounds = {
-                            "type": "Polygon",
-                            "coordinates": [
-                                [
-                                    [centroid_lon - 0.01, centroid_lat + 0.01],
-                                    [centroid_lon + 0.01, centroid_lat + 0.01],
-                                    [centroid_lon + 0.01, centroid_lat - 0.01],
-                                    [centroid_lon - 0.01, centroid_lat - 0.01],
-                                    [centroid_lon - 0.01, centroid_lat + 0.01]
-                                ]
-                            ]
-                        }
-                        st.session_state.map_bounds = sample_bounds
-                        st.success("Sample map bounds saved successfully! You can edit it later.")
-            
-            # Create project button
-            if "map_bounds" in st.session_state:
-                with col2:
-                    if st.button("Create Project"):
-                        create_project()
+            st.warning(f"Please complete all required inputs before creating project. Missing: {', '.join(missing)}")
 
 def create_project():
     """Create a new project by sending data to the API"""
@@ -512,8 +352,24 @@ def create_project():
         }
         
         # Prepare file data
+        # Get the original file object from session state
+        file_obj = st.session_state.excel_file
+        file_obj.seek(0)  # Reset file pointer to beginning
+        
+        # Get file extension to determine content type
+        file_extension = file_obj.name.split(".")[-1].lower()
+        
+        if file_extension == "xlsx":
+            content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        elif file_extension == "csv":
+            content_type = "text/csv"
+        else:
+            st.error(f"Unsupported file type: {file_extension}")
+            return
+        
+        # Create files dict with proper file handling
         files = {
-            "file": ("project_data.xlsx", st.session_state.excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            "file": (file_obj.name, file_obj.getvalue(), content_type)
         }
         
         # Make the API request
@@ -543,7 +399,17 @@ def create_project():
         else:
             st.error(f"Failed to create project: {response.status_code}")
             if response.content:
-                st.error(response.content.decode())
+                error_content = response.content.decode()
+                st.error(error_content)
+                
+                # Log detailed error information for debugging
+                try:
+                    error_json = json.loads(error_content)
+                    if "errors" in error_json:
+                        for error in error_json["errors"]:
+                            st.error(f"Detail: {error}")
+                except:
+                    pass
     
     except Exception as e:
         st.error(f"Error creating project: {str(e)}") 

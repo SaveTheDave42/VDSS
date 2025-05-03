@@ -1,105 +1,83 @@
 import pandas as pd
 import io
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
-def validate_excel(excel_data: bytes) -> Dict[str, Any]:
+def validate_excel(file_content: bytes) -> Dict[str, Any]:
     """
-    Validates the structure and content of the construction site Excel file.
-    
-    Args:
-        excel_data: Bytes of the uploaded Excel file
-        
-    Returns:
-        Dictionary with validation results:
-        {
-            "valid": bool,
-            "errors": List[str],
-            "data": Optional[Dict[str, Any]]  # Extracted data if valid
-        }
+    Validate Excel or CSV file
     """
     try:
-        # Try to read the Excel file
-        excel_buffer = io.BytesIO(excel_data)
+        # Try to detect file type from first few bytes
+        file_obj = io.BytesIO(file_content)
         
-        # Check if the file can be opened as Excel
+        # Try to read as Excel first
         try:
-            xls = pd.ExcelFile(excel_buffer)
+            df = pd.read_excel(file_obj, engine='openpyxl')
+            file_format = "excel"
+        except Exception as excel_err:
+            # If Excel fails, try as CSV
+            file_obj.seek(0)  # Reset file pointer
+            try:
+                df = pd.read_csv(file_obj)
+                file_format = "csv"
+            except Exception as csv_err:
+                return {
+                    "valid": False,
+                    "errors": [
+                        f"File is neither a valid Excel nor CSV file. Excel error: {str(excel_err)}. CSV error: {str(csv_err)}"
+                    ]
+                }
+        
+        # Lowercase column names for case-insensitive comparison
+        df_columns_lower = [col.lower() for col in df.columns]
+        
+        # Required columns check
+        required_columns = ["vorgangsname", "anfangstermin", "endtermin", "material"]
+        missing_columns = [col for col in required_columns if col not in df_columns_lower]
+        
+        if missing_columns:
+            return {
+                "valid": False,
+                "errors": [f"Missing required columns: {', '.join(missing_columns)}"]
+            }
+        
+        # Map actual column names to required column names
+        column_mapping = {}
+        for req_col in required_columns:
+            idx = df_columns_lower.index(req_col)
+            actual_col = df.columns[idx]
+            column_mapping[actual_col] = req_col
+        
+        # Rename columns to standardized names
+        df_standardized = df.rename(columns=column_mapping)
+        
+        # Check date columns
+        try:
+            df_standardized['anfangstermin'] = pd.to_datetime(df_standardized['anfangstermin'])
+            df_standardized['endtermin'] = pd.to_datetime(df_standardized['endtermin'])
         except Exception as e:
             return {
                 "valid": False,
-                "errors": [f"Invalid Excel file: {str(e)}"],
-                "data": None
+                "errors": [f"Invalid date format in 'anfangstermin' or 'endtermin' columns: {str(e)}"]
             }
         
-        # Expected sheets
-        required_sheets = ["Deliveries", "Schedule", "Vehicles"]
-        missing_sheets = [sheet for sheet in required_sheets if sheet not in xls.sheet_names]
-        
-        if missing_sheets:
+        # Check material column is numeric
+        try:
+            df_standardized['material'] = pd.to_numeric(df_standardized['material'])
+        except Exception as e:
             return {
                 "valid": False,
-                "errors": [f"Missing required sheets: {', '.join(missing_sheets)}"],
-                "data": None
+                "errors": [f"Invalid numeric format in 'material' column: {str(e)}"]
             }
-        
-        # Validate the Deliveries sheet
-        deliveries_df = pd.read_excel(excel_buffer, sheet_name="Deliveries")
-        
-        # Check required columns
-        required_delivery_columns = ["DeliveryID", "Date", "TimeWindow", "VehicleType", "Weight"]
-        missing_delivery_columns = [col for col in required_delivery_columns if col not in deliveries_df.columns]
-        
-        if missing_delivery_columns:
-            return {
-                "valid": False,
-                "errors": [f"Missing required columns in Deliveries sheet: {', '.join(missing_delivery_columns)}"],
-                "data": None
-            }
-        
-        # Validate the Schedule sheet
-        schedule_df = pd.read_excel(excel_buffer, sheet_name="Schedule")
-        
-        # Check required columns
-        required_schedule_columns = ["Phase", "StartDate", "EndDate", "Description"]
-        missing_schedule_columns = [col for col in required_schedule_columns if col not in schedule_df.columns]
-        
-        if missing_schedule_columns:
-            return {
-                "valid": False,
-                "errors": [f"Missing required columns in Schedule sheet: {', '.join(missing_schedule_columns)}"],
-                "data": None
-            }
-        
-        # Validate the Vehicles sheet
-        vehicles_df = pd.read_excel(excel_buffer, sheet_name="Vehicles")
-        
-        # Check required columns
-        required_vehicle_columns = ["VehicleType", "Length", "Width", "Weight"]
-        missing_vehicle_columns = [col for col in required_vehicle_columns if col not in vehicles_df.columns]
-        
-        if missing_vehicle_columns:
-            return {
-                "valid": False,
-                "errors": [f"Missing required columns in Vehicles sheet: {', '.join(missing_vehicle_columns)}"],
-                "data": None
-            }
-        
-        # If we made it here, the Excel file is valid
-        extracted_data = {
-            "deliveries": deliveries_df.to_dict(orient="records"),
-            "schedule": schedule_df.to_dict(orient="records"),
-            "vehicles": vehicles_df.to_dict(orient="records")
-        }
         
         return {
             "valid": True,
-            "errors": [],
-            "data": extracted_data
+            "data": df_standardized,
+            "format": file_format
         }
-        
+    
     except Exception as e:
         return {
             "valid": False,
-            "errors": [f"Error validating Excel file: {str(e)}"],
-            "data": None
+            "errors": [f"Invalid file: {str(e)}"]
         } 

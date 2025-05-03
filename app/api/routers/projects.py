@@ -14,6 +14,40 @@ from app.services.project_service import create_project, get_project, update_pro
 
 router = APIRouter()
 
+def process_geojson(geojson_data):
+    """
+    Process GeoJSON data to ensure it's in the expected format.
+    Extracts geometry from FeatureCollection and ensures coordinates are preserved.
+    """
+    if not geojson_data:
+        return []
+        
+    # Check if it's a FeatureCollection
+    if isinstance(geojson_data, dict) and geojson_data.get('type') == 'FeatureCollection':
+        # Get the first feature's geometry if available
+        if geojson_data.get('features') and len(geojson_data['features']) > 0:
+            feature = geojson_data['features'][0]
+            if 'geometry' in feature:
+                # Return the geometry directly to preserve coordinates
+                return feature['geometry']
+        # Return empty but valid GeoJSON structure if no features
+        return {"type": "Polygon", "coordinates": [[]]}
+    
+    # If it's already a geometry with coordinates, return as is
+    elif isinstance(geojson_data, dict) and 'type' in geojson_data and 'coordinates' in geojson_data:
+        return geojson_data
+    
+    # If it's a list, check if it's a list of geometries
+    elif isinstance(geojson_data, list):
+        # If it's a list of geometries, return the first one
+        if geojson_data and isinstance(geojson_data[0], dict) and 'type' in geojson_data[0] and 'coordinates' in geojson_data[0]:
+            return geojson_data[0]
+        # Otherwise, return empty
+        return {"type": "Polygon", "coordinates": [[]]}
+    
+    # Return empty but valid GeoJSON structure for invalid data
+    return {"type": "Polygon", "coordinates": [[]]}
+
 @router.post("/", response_model=Project)
 async def create_project_endpoint(
     file: UploadFile = File(...),
@@ -25,22 +59,47 @@ async def create_project_endpoint(
 ):
     """Create a new construction site project"""
     try:
-        # Validate the Excel file
-        excel_data = await file.read()
-        validation_result = validate_excel(excel_data)
+        # Get file content
+        file_content = await file.read()
+        
+        # Determine file extension
+        file_extension = file.filename.split(".")[-1].lower()
+        
+        # Validate the file (Excel or CSV)
+        validation_result = validate_excel(file_content)
         
         if not validation_result["valid"]:
             return JSONResponse(
                 status_code=400,
-                content={"message": "Invalid Excel file", "errors": validation_result["errors"]}
+                content={"message": "Invalid file", "errors": validation_result["errors"]}
             )
         
-        # Parse GeoJSON data
-        polygon_data = json.loads(polygon)
-        map_bounds_data = json.loads(map_bounds)
+        # Parse and process GeoJSON data to ensure correct format
+        polygon_data = process_geojson(json.loads(polygon))
+        map_bounds_data = process_geojson(json.loads(map_bounds))
         
-        waiting_areas_data = json.loads(waiting_areas) if waiting_areas else []
-        access_routes_data = json.loads(access_routes) if access_routes else []
+        # Waiting areas and access routes are processed differently
+        waiting_areas_json = json.loads(waiting_areas) if waiting_areas else None
+        access_routes_json = json.loads(access_routes) if access_routes else None
+        
+        # For waiting areas and access routes, we need to handle Feature Collections specially
+        if waiting_areas_json and isinstance(waiting_areas_json, dict) and waiting_areas_json.get('type') == 'FeatureCollection':
+            # Get all geometries from features
+            waiting_areas_data = []
+            for feature in waiting_areas_json.get('features', []):
+                if 'geometry' in feature:
+                    waiting_areas_data.append(feature['geometry'])
+        else:
+            waiting_areas_data = [waiting_areas_json] if waiting_areas_json else []
+        
+        if access_routes_json and isinstance(access_routes_json, dict) and access_routes_json.get('type') == 'FeatureCollection':
+            # Get all geometries from features
+            access_routes_data = []
+            for feature in access_routes_json.get('features', []):
+                if 'geometry' in feature:
+                    access_routes_data.append(feature['geometry'])
+        else:
+            access_routes_data = [access_routes_json] if access_routes_json else []
         
         # Create project
         project_data = ProjectCreate(
@@ -56,14 +115,12 @@ async def create_project_endpoint(
             created_at=datetime.now()
         )
         
-        # Save Excel data to disk
+        # Save file to disk
         file_path = f"data/projects/{name}/{file.filename}"
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         
         with open(file_path, "wb") as f:
-            # Go back to the beginning of the file
-            await file.seek(0)
-            f.write(await file.read())
+            f.write(file_content)
         
         return create_project(project_data, file_path)
     
@@ -109,15 +166,15 @@ async def update_project_endpoint(
         if name:
             update_data["name"] = name
         
-        # Process new Excel file if uploaded
+        # Process new file if uploaded
         if file:
-            excel_data = await file.read()
-            validation_result = validate_excel(excel_data)
+            file_content = await file.read()
+            validation_result = validate_excel(file_content)
             
             if not validation_result["valid"]:
                 return JSONResponse(
                     status_code=400,
-                    content={"message": "Invalid Excel file", "errors": validation_result["errors"]}
+                    content={"message": "Invalid file", "errors": validation_result["errors"]}
                 )
             
             # Save new file
@@ -126,25 +183,42 @@ async def update_project_endpoint(
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             
             with open(file_path, "wb") as f:
-                # Go back to the beginning of the file
-                await file.seek(0)
-                f.write(await file.read())
+                f.write(file_content)
             
             update_data["file_name"] = file.filename
             update_data["file_path"] = file_path
         
         # Process GeoJSON data
         if polygon:
-            update_data["polygon"] = json.loads(polygon)
-        
-        if waiting_areas:
-            update_data["waiting_areas"] = json.loads(waiting_areas)
-        
-        if access_routes:
-            update_data["access_routes"] = json.loads(access_routes)
+            update_data["polygon"] = process_geojson(json.loads(polygon))
         
         if map_bounds:
-            update_data["map_bounds"] = json.loads(map_bounds)
+            update_data["map_bounds"] = process_geojson(json.loads(map_bounds))
+        
+        # Special handling for waiting areas and access routes
+        if waiting_areas:
+            waiting_areas_json = json.loads(waiting_areas)
+            if isinstance(waiting_areas_json, dict) and waiting_areas_json.get('type') == 'FeatureCollection':
+                # Get all geometries from features
+                waiting_areas_data = []
+                for feature in waiting_areas_json.get('features', []):
+                    if 'geometry' in feature:
+                        waiting_areas_data.append(feature['geometry'])
+                update_data["waiting_areas"] = waiting_areas_data
+            else:
+                update_data["waiting_areas"] = [waiting_areas_json] if waiting_areas_json else []
+        
+        if access_routes:
+            access_routes_json = json.loads(access_routes)
+            if isinstance(access_routes_json, dict) and access_routes_json.get('type') == 'FeatureCollection':
+                # Get all geometries from features
+                access_routes_data = []
+                for feature in access_routes_json.get('features', []):
+                    if 'geometry' in feature:
+                        access_routes_data.append(feature['geometry'])
+                update_data["access_routes"] = access_routes_data
+            else:
+                update_data["access_routes"] = [access_routes_json] if access_routes_json else []
         
         # Process simulation parameters
         if simulation_start_time:
