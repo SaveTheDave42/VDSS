@@ -1,0 +1,196 @@
+{
+  "name": "Beispielprojekt Herodelele",
+  "file_name": "Material_Lieferungen.csv",
+  "polygon": {
+    "coordinates": [
+      [
+        [
+          8.504835677160457,
+          47.39383827956664
+        ],
+        [
+          8.502950598460984,
+          47.39277209637507
+        ],
+        [
+          8.503193834422063,
+          47.392537450845765
+        ],
+        [
+          8.505668760327836,
+          47.39182115803189
+        ],
+        [
+          8.50697615361915,
+          47.3926362490906
+        ],
+        [
+          8.505382958073284,
+          47.39368185249512
+        ],
+        [
+          8.504835677160457,
+          47.39383827956664
+        ]
+      ]
+    ],
+    "type": "Polygon"
+  },
+  "waiting_areas": [
+    {
+      "coordinates": [
+        [
+          [
+            8.503187578619361,
+            47.39365252259802
+          ],
+          [
+            8.502413920792236,
+            47.39314550154489
+          ],
+          [
+            8.502693754481157,
+            47.3929504921571
+          ],
+          [
+            8.503541485948318,
+            47.39353551815526
+          ],
+          [
+            8.503187578619361,
+            47.39365252259802
+          ]
+        ]
+      ],
+      "type": "Polygon"
+    }
+  ],
+  "access_routes": [
+    {
+      "coordinates": [
+        [
+          8.494922651093447,
+          47.393317933269856
+        ],
+        [
+          8.500428790432608,
+          47.39346279644511
+        ],
+        [
+          8.501827958873832,
+          47.39368566209157
+        ],
+        [
+          8.503597495431876,
+          47.39382495264195
+        ],
+        [
+          8.50525180635401,
+          47.393886240367436
+        ],
+        [
+          8.505712708900148,
+          47.39366337556922
+        ],
+        [
+          8.506568774438364,
+          47.39304063688988
+        ],
+        [
+          8.507023205627235,
+          47.39268265372857
+        ],
+        [
+          8.50695082666482,
+          47.3925323063724
+        ],
+        [
+          8.505886463237772,
+          47.391918389339736
+        ],
+        [
+          8.505644589159402,
+          47.39201748959138
+        ]
+      ],
+      "type": "LineString"
+    }
+  ],
+  "map_bounds": {
+    "coordinates": [
+      [
+        [
+          8.495220725501724,
+          47.398998354095255
+        ],
+        [
+          8.495220725501724,
+          47.398996675676926
+        ],
+        [
+          8.49523802513363,
+          47.398996675676926
+        ],
+        [
+          8.49523802513363,
+          47.398998354095255
+        ],
+        [
+          8.495220725501724,
+          47.398998354095255
+        ]
+      ]
+    ],
+    "type": "Polygon"
+  },
+  "id": "beispiel_projekt_herodelele",
+  "created_at": "2025-05-13T10:59:27.006758",
+  "primary_counter": {
+    "id": "Z076",
+    "name": "Pfingstweidstrasse (Sportweg)",
+    "direction": "einw\u00e4rts",
+    "profile_id": "Z076_einw\u00e4rts",
+    "display_name": "Z076 - Pfingstweidstrasse (Sportweg) (einw\u00e4rts)"
+  },
+  "selected_counters": [
+    {
+      "id": "Z076",
+      "name": "Pfingstweidstrasse (Sportweg)",
+      "direction": "einw\u00e4rts",
+      "profile_id": "Z076_einw\u00e4rts",
+      "display_name": "Z076 - Pfingstweidstrasse (Sportweg) (einw\u00e4rts)"
+    },
+    {
+      "id": "Z076",
+      "name": "Pfingstweidstrasse (Sportweg)",
+      "direction": "ausw\u00e4rts",
+      "profile_id": "Z076_ausw\u00e4rts",
+      "display_name": "Z076 - Pfingstweidstrasse (Sportweg) (ausw\u00e4rts)"
+    },
+    {
+      "id": "Z093",
+      "name": "Hardturmstrasse (Bernoullih\u00e4user)",
+      "direction": "einw\u00e4rts",
+      "profile_id": "Z093_einw\u00e4rts",
+      "display_name": "Z093 - Hardturmstrasse (Bernoullih\u00e4user) (einw\u00e4rts)"
+    },
+    {
+      "id": "Z093",
+      "name": "Hardturmstrasse (Bernoullih\u00e4user)",
+      "direction": "ausw\u00e4rts",
+      "profile_id": "Z093_ausw\u00e4rts",
+      "display_name": "Z093 - Hardturmstrasse (Bernoullih\u00e4user) (ausw\u00e4rts)"
+    }
+  ],
+  "delivery_days": [
+    "Montag",
+    "Dienstag",
+    "Mittwoch",
+    "Donnerstag",
+    "Freitag"
+  ],
+  "delivery_hours": {
+    "start": "07:00",
+    "end": "17:00"
+  }
+}

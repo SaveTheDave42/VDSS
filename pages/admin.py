@@ -12,6 +12,42 @@ from io import BytesIO
 # Define API URL
 API_URL = "http://localhost:8000"
 
+def show_admin():
+    """Main admin function to handle project selection and display admin panel"""
+    st.title("Admin Panel")
+    
+    # Refresh the projects list if needed
+    if "projects" not in st.session_state:
+        if not refresh_projects(): # Wenn Laden fehlschlägt, abbrechen
+            return
+    
+    # Add refresh button
+    if st.button("🔄 Refresh Projects"):
+        if not refresh_projects():
+            return
+    
+    # Project selection logic is now primarily handled by streamlit_app.py in the sidebar.
+    # We just use the current_project from session_state here.
+    if "current_project" in st.session_state and st.session_state.current_project is not None:
+        selected_project = st.session_state.current_project
+        
+        # Transfer traffic data to session state if available in the project
+        # This ensures that if a project is selected via sidebar, its specific traffic data is loaded
+        if "counter_profiles" in selected_project:
+            st.session_state.counter_profiles = selected_project["counter_profiles"]
+            st.session_state.global_counter_profiles = selected_project["counter_profiles"]
+        if "selected_counters" in selected_project:
+            st.session_state.selected_counters = selected_project["selected_counters"]
+            st.session_state.global_selected_counters = selected_project["selected_counters"]
+        if "primary_counter" in selected_project:
+            st.session_state.primary_counter = selected_project["primary_counter"]
+            st.session_state.global_primary_counter = selected_project["primary_counter"]
+        
+        # Display project details panel
+        show_admin_panel(selected_project)
+    else:
+        st.info("Please select a project from the sidebar or create a new one in the Project Setup page.")
+
 def show_admin_panel(project):
     """Show the admin panel for managing an existing project"""
     st.markdown(f"## Project: {project['name']}")
@@ -35,48 +71,65 @@ def show_admin_panel(project):
         st.markdown("The map below shows the current project geometries. To edit them, use the text areas below.")
         
         # Extract coordinates for map centering
-        polygon_coords = project["polygon"]["coordinates"][0]
-        centroid_lon = sum(p[0] for p in polygon_coords) / len(polygon_coords)
-        centroid_lat = sum(p[1] for p in polygon_coords) / len(polygon_coords)
-        
-        # Create map
-        m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=14)
-        
-        # Add construction site polygon
-        folium.GeoJson(
-            project["polygon"],
-            name="Construction Site",
-            style_function=lambda x: {"fillColor": "red", "color": "red", "weight": 2, "fillOpacity": 0.4}
-        ).add_to(m)
-        
-        # Add waiting areas
-        for i, area in enumerate(project["waiting_areas"]):
+        try:
+            polygon_coords = project["polygon"]["coordinates"][0]
+            centroid_lon = sum(p[0] for p in polygon_coords) / len(polygon_coords)
+            centroid_lat = sum(p[1] for p in polygon_coords) / len(polygon_coords)
+            
+            # Create map
+            m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=14)
+            
+            # Add construction site polygon
             folium.GeoJson(
-                area,
-                name=f"Waiting Area {i+1}",
-                style_function=lambda x: {"fillColor": "blue", "color": "blue", "weight": 2, "fillOpacity": 0.4}
+                project["polygon"],
+                name="Construction Site",
+                style_function=lambda x: {"fillColor": "red", "color": "red", "weight": 2, "fillOpacity": 0.4}
             ).add_to(m)
-        
-        # Add access routes
-        for i, route in enumerate(project["access_routes"]):
-            folium.GeoJson(
-                route,
-                name=f"Access Route {i+1}",
-                style_function=lambda x: {"color": "green", "weight": 4}
-            ).add_to(m)
-        
-        # Add map bounds
-        folium.GeoJson(
-            project["map_bounds"],
-            name="Map Bounds",
-            style_function=lambda x: {"fillColor": "purple", "color": "purple", "weight": 2, "fillOpacity": 0.2}
-        ).add_to(m)
-        
-        # Add layer control
-        folium.LayerControl().add_to(m)
-        
-        # Display the map
-        folium_static(m)
+            
+            # Add waiting areas
+            if project.get("waiting_areas"):
+                for i, area in enumerate(project["waiting_areas"]):
+                    folium.GeoJson(
+                        area,
+                        name=f"Waiting Area {i+1}",
+                        style_function=lambda x: {"fillColor": "blue", "color": "blue", "weight": 2, "fillOpacity": 0.4}
+                    ).add_to(m)
+            
+            # Add access routes
+            if project.get("access_routes"):
+                # Ensure access_routes is a list of GeoJSON features or a single GeoJSON feature
+                access_routes_data = project["access_routes"]
+                if isinstance(access_routes_data, dict): # Single feature
+                    access_routes_data = [access_routes_data]
+                
+                for i, route in enumerate(access_routes_data):
+                    folium.GeoJson(
+                        route,
+                        name=f"Access Route {i+1}",
+                        style_function=lambda x: {"color": "green", "weight": 4}
+                    ).add_to(m)
+            
+            # Add map bounds
+            if project.get("map_bounds"):
+                folium.GeoJson(
+                    project["map_bounds"],
+                    name="Map Bounds",
+                    style_function=lambda x: {"fillColor": "purple", "color": "purple", "weight": 2, "fillOpacity": 0.2}
+                ).add_to(m)
+            
+            # Add layer control
+            folium.LayerControl().add_to(m)
+            
+            # Display the map
+            folium_static(m)
+            
+        except KeyError as e:
+            st.error(f"Error displaying map: Missing key {str(e)} in project data. Please check the project.json file or re-create the project.")
+            st.json(project) # Display project data for debugging
+        except Exception as e:
+            st.error(f"Error displaying map: {str(e)}")
+            st.info("Please check that your GeoJSON data is correctly formatted.")
+            st.json(project) # Display project data for debugging
         
         # Edit geometries via JSON
         col1, col2 = st.columns(2)

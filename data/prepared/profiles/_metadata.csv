@@ -1,0 +1,205 @@
+profile_id,counter_id,direction,display_name,file,lat,lon,data_points
+Z001_auswärts,Z001,auswärts,Z001 - Seestrasse (Strandbad Wollishofen) (auswärts),data/prepared/profiles/Z001_auswärts.csv,47.34105853042039,8.537068036893146,1326
+Z001_einwärts,Z001,einwärts,Z001 - Seestrasse (Strandbad Wollishofen) (einwärts),data/prepared/profiles/Z001_einwärts.csv,47.34107106679844,8.537111833404706,1326
+Z002_auswärts,Z002,auswärts,Z002 - Albisstrasse (Widmerstrasse) (auswärts),data/prepared/profiles/Z002_auswärts.csv,47.33416670595236,8.529921464289464,1440
+Z002_einwärts,Z002,einwärts,Z002 - Albisstrasse (Widmerstrasse) (einwärts),data/prepared/profiles/Z002_einwärts.csv,47.334165346180285,8.52997965640755,1440
+Z003_auswärts,Z003,auswärts,Z003 - Sood-/Leimbachstrasse (auswärts),data/prepared/profiles/Z003_auswärts.csv,47.33254743168517,8.517891174463774,1440
+Z003_einwärts,Z003,einwärts,Z003 - Sood-/Leimbachstrasse (einwärts),data/prepared/profiles/Z003_einwärts.csv,47.33291231033498,8.518349352547869,1440
+Z004_auswärts,Z004,auswärts,Z004 - Birmensdorferstrasse (Triemli) (auswärts),data/prepared/profiles/Z004_auswärts.csv,47.36779007207364,8.494623260545984,1440
+Z004_einwärts,Z004,einwärts,Z004 - Birmensdorferstrasse (Triemli) (einwärts),data/prepared/profiles/Z004_einwärts.csv,47.36768408027976,8.494744558294375,1440
+Z005_auswärts,Z005,auswärts,Z005 - Albisriederstrasse (Lyrenweg) (auswärts),data/prepared/profiles/Z005_auswärts.csv,47.374503607417246,8.482991115336937,1440
+Z005_einwärts,Z005,einwärts,Z005 - Albisriederstrasse (Lyrenweg) (einwärts),data/prepared/profiles/Z005_einwärts.csv,47.37445205165537,8.482962827328818,1440
+Z006_auswärts,Z006,auswärts,Z006 - Badenerstrasse (Hermetschloobrücke) (auswärts),data/prepared/profiles/Z006_auswärts.csv,47.39399578587541,8.472110139179229,1440
+Z006_einwärts,Z006,einwärts,Z006 - Badenerstrasse (Hermetschloobrücke) (einwärts),data/prepared/profiles/Z006_einwärts.csv,47.39393224447725,8.472023731621112,1440
+Z008_auswärts,Z008,auswärts,Z008 - Limmattalstrasse (Frankentalerstrasse) (auswärts),data/prepared/profiles/Z008_auswärts.csv,47.40524239654595,8.48048368883257,1440
+Z008_einwärts,Z008,einwärts,Z008 - Limmattalstrasse (Frankentalerstrasse) (einwärts),data/prepared/profiles/Z008_einwärts.csv,47.40506052654081,8.47907477755583,1440
+Z009_auswärts,Z009,auswärts,Z009 - Regensdorferstrasse (Frankentalerstrasse) (auswärts),data/prepared/profiles/Z009_auswärts.csv,47.415956085479074,8.483375732622852,1440
+Z009_einwärts,Z009,einwärts,Z009 - Regensdorferstrasse (Frankentalerstrasse) (einwärts),data/prepared/profiles/Z009_einwärts.csv,47.41595193323872,8.483307668255932,1440
+Z010_auswärts,Z010,auswärts,Z010 - Wehntalerstrasse (Zehntenhausplatz) (auswärts),data/prepared/profiles/Z010_auswärts.csv,47.41984233052451,8.504437070667969,1440
+Z010_einwärts,Z010,einwärts,Z010 - Wehntalerstrasse (Zehntenhausplatz) (einwärts),data/prepared/profiles/Z010_einwärts.csv,47.41979044269868,8.504386863506095,1211
+Z011_auswärts,Z011,auswärts,Z011 - Glattalstrasse (Kolbenackerstrasse) (auswärts),data/prepared/profiles/Z011_auswärts.csv,47.426307381670306,8.547140588576962,1260
+Z011_einwärts,Z011,einwärts,Z011 - Glattalstrasse (Kolbenackerstrasse) (einwärts),data/prepared/profiles/Z011_einwärts.csv,47.426983144525906,8.546468184025155,1259
+Z012_auswärts,Z012,auswärts,Z012 - Schaffhauserstrasse (Glatttalstrasse) (auswärts),data/prepared/profiles/Z012_auswärts.csv,47.42355706074551,8.55181292130483,1440
+Z012_einwärts,Z012,einwärts,Z012 - Schaffhauserstrasse (Glatttalstrasse) (einwärts),data/prepared/profiles/Z012_einwärts.csv,47.42357992272814,8.551755346312008,1440
+Z013_auswärts,Z013,auswärts,Z013 - Thurgauerstrasse (Schärenmoosstrasse) (auswärts),data/prepared/profiles/Z013_auswärts.csv,47.419625873998214,8.555878441251167,1440
+Z013_einwärts,Z013,einwärts,Z013 - Thurgauerstrasse (Schärenmoosstrasse) (einwärts),data/prepared/profiles/Z013_einwärts.csv,47.41995709179105,8.555932173778457,1440
+Z014_auswärts,Z014,auswärts,Z014 - Weststrasse (Ueberlandstrasse) (auswärts),data/prepared/profiles/Z014_auswärts.csv,47.40910873433026,8.579938633614873,1440
+Z014_einwärts,Z014,einwärts,Z014 - Weststrasse (Ueberlandstrasse) (einwärts),data/prepared/profiles/Z014_einwärts.csv,47.40909679719929,8.579817532818955,1440
+Z015_auswärts,Z015,auswärts,Z015 - Neue Winterthurerstrasse (Ueberlandstrasse) (auswärts),data/prepared/profiles/Z015_auswärts.csv,47.406415622971934,8.59156376264785,960
+Z015_einwärts,Z015,einwärts,Z015 - Neue Winterthurerstrasse (Ueberlandstrasse) (einwärts),data/prepared/profiles/Z015_einwärts.csv,47.40644939253651,8.591424706920156,960
+Z016_auswärts,Z016,auswärts,Z016 - Ueberlandstrasse (Neue Winterthurerstrasse) (auswärts),data/prepared/profiles/Z016_auswärts.csv,47.40563943945429,8.591337617276631,1440
+Z016_einwärts,Z016,einwärts,Z016 - Ueberlandstrasse (Neue Winterthurerstrasse) (einwärts),data/prepared/profiles/Z016_einwärts.csv,47.405735224227534,8.591402096335328,1440
+Z017_auswärts,Z017,auswärts,Z017 - Dübendorfstrasse (Altwiesenstrasse) (auswärts),data/prepared/profiles/Z017_auswärts.csv,47.39812866392449,8.592176513030354,1440
+Z017_einwärts,Z017,einwärts,Z017 - Dübendorfstrasse (Altwiesenstrasse) (einwärts),data/prepared/profiles/Z017_einwärts.csv,47.398164031068426,8.592174894204303,1440
+Z018_auswärts,Z018,auswärts,Z018 - Tobelhof-/Dreiwiesenstrasse (auswärts),data/prepared/profiles/Z018_auswärts.csv,47.37852611162638,8.574966121552066,1440
+Z018_einwärts,Z018,einwärts,Z018 - Tobelhof-/Dreiwiesenstrasse (einwärts),data/prepared/profiles/Z018_einwärts.csv,47.378575818313706,8.575445251676445,1440
+Z019_auswärts,Z019,auswärts,Z019 - Witikonerstrasse (Katzenschwanzstrasse) (auswärts),data/prepared/profiles/Z019_auswärts.csv,47.36083711637546,8.598650982179922,1440
+Z019_einwärts,Z019,einwärts,Z019 - Witikonerstrasse (Katzenschwanzstrasse) (einwärts),data/prepared/profiles/Z019_einwärts.csv,47.36088561169392,8.598623044824578,1440
+Z020_auswärts,Z020,auswärts,Z020 - Forchstrasse (Witellikerstrasse) (auswärts),data/prepared/profiles/Z020_auswärts.csv,47.353912584747505,8.575559426804348,1440
+Z020_einwärts,Z020,einwärts,Z020 - Forchstrasse (Witellikerstrasse) (einwärts),data/prepared/profiles/Z020_einwärts.csv,47.35338137516122,8.576394453999152,1440
+Z021_auswärts,Z021,auswärts,Z021 - Bellerivestrasse (Bahnhof Tiefenbrunnen) (auswärts),data/prepared/profiles/Z021_auswärts.csv,47.34899725993967,8.561824896918994,1440
+Z021_einwärts,Z021,einwärts,Z021 - Bellerivestrasse (Bahnhof Tiefenbrunnen) (einwärts),data/prepared/profiles/Z021_einwärts.csv,47.34862625336168,8.56230997159453,1440
+Z022_auswärts,Z022,auswärts,Z022 - Allmendstrasse (Brunau) (auswärts),data/prepared/profiles/Z022_auswärts.csv,47.34718931215961,8.519877593903187,1440
+Z022_einwärts,Z022,einwärts,Z022 - Allmendstrasse (Brunau) (einwärts),data/prepared/profiles/Z022_einwärts.csv,47.34687576025359,8.520489970168455,1440
+Z024_auswärts,Z024,auswärts,Z024 - Autobahn A1 (Auschluss Schwamendingen) (auswärts),data/prepared/profiles/Z024_auswärts.csv,47.41018255900776,8.569938996556107,600
+Z024_einwärts,Z024,einwärts,Z024 - Autobahn A1 (Auschluss Schwamendingen) (einwärts),data/prepared/profiles/Z024_einwärts.csv,47.410265273238686,8.56981447309751,600
+Z025_Altstetten,Z025,Altstetten,Z025 - Europabrücke (Winzerstrasse) (Altstetten),data/prepared/profiles/Z025_Altstetten.csv,47.3995435658477,8.495194593835503,1440
+Z025_Höngg,Z025,Höngg,Z025 - Europabrücke (Winzerstrasse) (Höngg),data/prepared/profiles/Z025_Höngg.csv,47.399283424906784,8.495214870982633,1440
+Z026_Bucheggplatz,Z026,Bucheggplatz,Z026 - Rosengartenstrasse (Röschibachstrasse) (Bucheggplatz),data/prepared/profiles/Z026_Bucheggplatz.csv,47.39219831344234,8.52359923213398,1440
+Z026_Hardplatz,Z026,Hardplatz,Z026 - Rosengartenstrasse (Hardplatz),data/prepared/profiles/Z026_Hardplatz.csv,47.392213717538716,8.523951232795994,1440
+Z027_Escher Wyss Platz,Z027,Escher Wyss Platz,Z027 - Wipkingerbrücke (Escher Wyss Platz),data/prepared/profiles/Z027_Escher Wyss Platz.csv,47.39198390959066,8.52356638726177,1440
+Z027_Wipkingerplatz,Z027,Wipkingerplatz,Z027 - Wipkingerbrücke (Wipkingerplatz),data/prepared/profiles/Z027_Wipkingerplatz.csv,47.39257525016697,8.524226701925894,1440
+Z028_Limmatplatz,Z028,Limmatplatz,Z028 - Kornhausbrücke (Limmatplatz),data/prepared/profiles/Z028_Limmatplatz.csv,47.38684259747994,8.534640667628336,1440
+Z028_Nord,Z028,Nord,Z028 - Kornhausbrücke (Nord),data/prepared/profiles/Z028_Nord.csv,47.386869486307575,8.534802543670777,1440
+Z029_Bahnhof,Z029,Bahnhof,Z029 - Walchebrücke (Bahnhof),data/prepared/profiles/Z029_Bahnhof.csv,47.378635538237226,8.541644767122648,960
+Z029_Walcheplatz,Z029,Walcheplatz,Z029 - Walchebrücke (Walcheplatz),data/prepared/profiles/Z029_Walcheplatz.csv,47.37862239482028,8.54235219446902,840
+Z030_Bahnhofquai,Z030,Bahnhofquai,Z030 - Rudolf Brun-Brücke (Bahnhofquai),data/prepared/profiles/Z030_Bahnhofquai.csv,47.37439504566229,8.542737391846446,1440
+Z030_Mühlegasse,Z030,Mühlegasse,Z030 - Rudolf Brun-Brücke (Mühlegasse),data/prepared/profiles/Z030_Mühlegasse.csv,47.374377754318886,8.5419299445841,1440
+Z031_Bellevue,Z031,Bellevue,Z031 - Quaibrücke (Bellevue),data/prepared/profiles/Z031_Bellevue.csv,47.366672325702964,8.542249889656315,1440
+Z031_Bürkliplatz,Z031,Bürkliplatz,Z031 - Quaibrücke (Bürkliplatz),data/prepared/profiles/Z031_Bürkliplatz.csv,47.36687017183801,8.542753661453927,1440
+Z032_Oerlikon,Z032,Oerlikon,Z032 - Binzmühlestrasse (Thurgauerstrasse) (Oerlikon),data/prepared/profiles/Z032_Oerlikon.csv,47.414256870461294,8.550536931540314,1440
+Z032_Schwamendingen,Z032,Schwamendingen,Z032 - Binzmühlestrasse (Thurgauerstrasse) (Schwamendingen),data/prepared/profiles/Z032_Schwamendingen.csv,47.4141109345379,8.550550051996687,1440
+Z033_auswärts,Z033,auswärts,Z033 - Milchbucktunnel (Südportal) (auswärts),data/prepared/profiles/Z033_auswärts.csv,47.38564492330156,8.537517002329835,1440
+Z033_einwärts,Z033,einwärts,Z033 - Milchbucktunnel (Südportal) (einwärts),data/prepared/profiles/Z033_einwärts.csv,47.38582320786505,8.537242540891095,1440
+Z034_Affoltern,Z034,Affoltern,Z034 - Emil Klöti-Strasse (Gsteigstrasse) (Affoltern),data/prepared/profiles/Z034_Affoltern.csv,47.40560050660545,8.504679198728137,1276
+Z034_Bucheggplatz,Z034,Bucheggplatz,Z034 - Emil Klöti-Strasse (Gsteigstrasse) (Bucheggplatz),data/prepared/profiles/Z034_Bucheggplatz.csv,47.40568042500895,8.504469733137643,1440
+Z035_Birmensdorferstrasse,Z035,Birmensdorferstrasse,Z035 - Gutstrasse (Burstwiesenstrasse) (Birmensdorferstrasse),data/prepared/profiles/Z035_Birmensdorferstrasse.csv,47.37246187362527,8.505155076379308,1440
+Z035_Hubertus,Z035,Hubertus,Z035 - Gutstrasse (Burstwiesenstrasse) (Hubertus),data/prepared/profiles/Z035_Hubertus.csv,47.372592963384974,8.505073749403644,1440
+Z036_Albisgütli,Z036,Albisgütli,Z036 - Schweighofstrasse (Hägelerweg) (Albisgütli),data/prepared/profiles/Z036_Albisgütli.csv,47.36788386873381,8.50151963882265,1440
+Z036_Birmensdorferstrasse,Z036,Birmensdorferstrasse,Z036 - Schweighofstrasse (Hägelerweg) (Birmensdorferstrasse),data/prepared/profiles/Z036_Birmensdorferstrasse.csv,47.36797428191999,8.501528061528308,1440
+Z037_Klusplatz,Z037,Klusplatz,Z037 - Bergstrasse (Schneckenmannstrasse) (Klusplatz),data/prepared/profiles/Z037_Klusplatz.csv,47.37515910301261,8.560474245027706,1440
+Z037_Vorderberg,Z037,Vorderberg,Z037 - Bergstrasse (Schneckenmannstrasse) (Vorderberg),data/prepared/profiles/Z037_Vorderberg.csv,47.37525089552865,8.56046068380948,1440
+Z038_Bucheggplatz,Z038,Bucheggplatz,Z038 - Rosengartenstrasse (Nordstrasse) (Bucheggplatz),data/prepared/profiles/Z038_Bucheggplatz.csv,47.39489304028647,8.525735057432787,1440
+Z038_Hardbrücke,Z038,Hardbrücke,Z038 - Rosengartenstrasse (Nordstrasse) (Hardbrücke),data/prepared/profiles/Z038_Hardbrücke.csv,47.39491779381528,8.52565674347073,1440
+Z039_Albisriederplatz und Hohlstrasse,Z039,Albisriederplatz und Hohlstrasse,Z039 - Hardbrücke (SBB PJZ) (Albisriederplatz und Hohlstrasse),data/prepared/profiles/Z039_Albisriederplatz und Hohlstrasse.csv,47.38318543249688,8.515117080357289,1440
+Z040_Birmensdorferstrasse,Z040,Birmensdorferstrasse,Z040 - Seebahnstrasse (Kalkbreitestrasse) (Birmensdorferstrasse),data/prepared/profiles/Z040_Birmensdorferstrasse.csv,47.37341173409184,8.51990261622895,1440
+Z040_Hohlstrasse,Z040,Hohlstrasse,Z040 - Seebahnstrasse (Kalkbreitestrasse) (Hohlstrasse),data/prepared/profiles/Z040_Hohlstrasse.csv,47.37382649394906,8.519518680146435,679
+Z041_Löwenplatz,Z041,Löwenplatz,Z041 - Gessnerallee (Usteribrücke) (Löwenplatz),data/prepared/profiles/Z041_Löwenplatz.csv,47.37588606955875,8.536187968687782,1440
+Z041_Selnau,Z041,Selnau,Z041 - Gessnerallee (Usteribrücke) (Selnau),data/prepared/profiles/Z041_Selnau.csv,47.375867650629665,8.535484959459794,1440
+Z042_Rudolf-Brun-Brücke,Z042,Rudolf-Brun-Brücke,Z042 - Limmatquai (Rudolf-Brun-Brücke) (Rudolf-Brun-Brücke),data/prepared/profiles/Z042_Rudolf-Brun-Brücke.csv,47.37458501419838,8.543001794604349,1440
+Z043_Central und Mühlegasse,Z043,Central und Mühlegasse,Z043 - Seilergraben (Mühlegasse) (Central und Mühlegasse),data/prepared/profiles/Z043_Central und Mühlegasse.csv,47.374583403246596,8.546007535300971,1440
+Z043_Heimplatz,Z043,Heimplatz,Z043 - Seilergraben (Mühlegasse) (Heimplatz),data/prepared/profiles/Z043_Heimplatz.csv,47.37376281697536,8.546537898294932,1440
+Z044_Brudolf-Brun-Brücke,Z044,Brudolf-Brun-Brücke,Z044 - Uraniastrasse (Bahnhofstrasse) (Brudolf-Brun-Brücke),data/prepared/profiles/Z044_Brudolf-Brun-Brücke.csv,47.37442792621664,8.53866885821706,1440
+Z044_Sihlporte,Z044,Sihlporte,Z044 - Uraniastrasse (Bahnhofstrasse) (Sihlporte),data/prepared/profiles/Z044_Sihlporte.csv,47.37458264791514,8.538706082943781,1440
+Z045_See,Z045,See,Z045 - Talstrasse (Pelikanstrasse) (See),data/prepared/profiles/Z045_See.csv,47.37063091313492,8.535346883648968,1440
+Z045_Sihlporte,Z045,Sihlporte,Z045 - Talstrasse (Pelikanstrasse) (Sihlporte),data/prepared/profiles/Z045_Sihlporte.csv,47.37069173265866,8.53540242259822,1440
+Z046_Heimplatz,Z046,Heimplatz,Z046 - Zeltweg (Merkurstrasse) (Heimplatz),data/prepared/profiles/Z046_Heimplatz.csv,47.36704187975659,8.553252443258863,1440
+Z046_Kreuzplatz,Z046,Kreuzplatz,Z046 - Zeltweg (Merkurstrasse) (Kreuzplatz),data/prepared/profiles/Z046_Kreuzplatz.csv,47.366733038291294,8.553433331074576,1440
+Z047_Heimplatz,Z047,Heimplatz,Z047 - Hottingerstrasse (Freiestrasse) (Heimplatz),data/prepared/profiles/Z047_Heimplatz.csv,47.369281721373945,8.555789831541052,1440
+Z047_Klusplatz,Z047,Klusplatz,Z047 - Hottingerstrasse (Freiestrasse) (Klusplatz),data/prepared/profiles/Z047_Klusplatz.csv,47.36915309123308,8.555966412934342,1440
+Z048_Bellevue,Z048,Bellevue,Z048 - Rämistrasse (Stadelhoferstrasse) (Bellevue),data/prepared/profiles/Z048_Bellevue.csv,47.36784607618591,8.545955627678723,1043
+Z048_Heimplatz,Z048,Heimplatz,Z048 - Rämistrasse (Stadelhoferstrasse) (Heimplatz),data/prepared/profiles/Z048_Heimplatz.csv,47.36796655903057,8.546355072694055,1440
+Z049_Bahnhof,Z049,Bahnhof,Z049 - Bahnhofbrücke (Bahnhof),data/prepared/profiles/Z049_Bahnhof.csv,47.37701365647778,8.542197182245275,1440
+Z049_Central,Z049,Central,Z049 - Bahnhofbrücke (Central),data/prepared/profiles/Z049_Central.csv,47.37680808858805,8.543094337992263,1320
+Z050_Altstetten,Z050,Altstetten,Z050 - Europabrücke (Max Högger- und Würzgrabenstrasse) (Altstetten),data/prepared/profiles/Z050_Altstetten.csv,47.393142768431844,8.492834997891135,1440
+Z050_Höngg,Z050,Höngg,Z050 - Europabrücke (Max Högger- und Würzgrabenstrasse) (Höngg),data/prepared/profiles/Z050_Höngg.csv,47.39312910903473,8.49294202326319,1068
+Z051_Affoltern,Z051,Affoltern,Z051 - Seebacherstrasse (Binzmühlestrasse) (Affoltern),data/prepared/profiles/Z051_Affoltern.csv,47.41470274453062,8.520487091879131,1440
+Z051_Seebach,Z051,Seebach,Z051 - Seebacherstrasse (Binzmühlestrasse) (Seebach),data/prepared/profiles/Z051_Seebach.csv,47.41468070805047,8.520535013338407,1440
+Z052_Hardbrücke,Z052,Hardbrücke,Z052 - Hirschwiesentunnel (Hardbrücke),data/prepared/profiles/Z052_Hardbrücke.csv,47.39843892942238,8.537893096254667,240
+Z052_Winterthur,Z052,Winterthur,Z052 - Hirschwiesentunnel (Winterthur),data/prepared/profiles/Z052_Winterthur.csv,47.398384769254974,8.537913042755346,240
+Z053_Autobahn,Z053,Autobahn,Z053 - Birchstrasse (Eichraintunnel) (Autobahn),data/prepared/profiles/Z053_Autobahn.csv,47.42760273254681,8.546698776319129,1440
+Z053_Glatttalstrasse,Z053,Glatttalstrasse,Z053 - Birchstrasse (Eichraintunnel) (Glatttalstrasse),data/prepared/profiles/Z053_Glatttalstrasse.csv,47.42753241272731,8.546241246093356,1440
+Z054_Heimplatz,Z054,Heimplatz,Z054 - Rämistrasse (Kantonsschul- und Zürichbergstrasse) (Heimplatz),data/prepared/profiles/Z054_Heimplatz.csv,47.37279867615613,8.550427130311189,1440
+Z054_Universität,Z054,Universität,Z054 - Rämistrasse (Kantonsschul- und Zürichbergstrasse) (Universität),data/prepared/profiles/Z054_Universität.csv,47.37274909967517,8.550297654309382,1440
+Z055_Hegibachplatz,Z055,Hegibachplatz,Z055 - Höschgasse (Zollikerstrasse) (Hegibachplatz),data/prepared/profiles/Z055_Hegibachplatz.csv,47.35937174432792,8.557682015914647,1440
+Z055_See,Z055,See,Z055 - Höschgasse (Zollikerstrasse) (See),data/prepared/profiles/Z055_See.csv,47.359405533846534,8.557611106793026,1440
+Z056_Zollikon,Z056,Zollikon,Z056 - Zollikerstrasse (Höschgasse) (Zollikon),data/prepared/profiles/Z056_Zollikon.csv,47.3590923812794,8.558096725619858,1440
+Z056_einwärts,Z056,einwärts,Z056 - Zollikerstrasse (Höschgasse) (einwärts),data/prepared/profiles/Z056_einwärts.csv,47.35912756428337,8.55816974420174,1200
+Z057_See,Z057,See,Z057 - Stockerstrasse (Dreikönigstrasse) (See),data/prepared/profiles/Z057_See.csv,47.36703130913556,8.534988435783523,1440
+Z057_Stauffacherplatz,Z057,Stauffacherplatz,Z057 - Stockerstrasse (Dreikönigstrasse) (Stauffacherplatz),data/prepared/profiles/Z057_Stauffacherplatz.csv,47.36705135236253,8.535046971519535,1440
+Z058_Hauptbahnhof,Z058,Hauptbahnhof,Z058 - Stampfenbachstrasse (Wasserwerkstrasse) (Hauptbahnhof),data/prepared/profiles/Z058_Hauptbahnhof.csv,47.38049016749406,8.542660377001537,1440
+Z058_Schaffhauserplatz,Z058,Schaffhauserplatz,Z058 - Stampfenbachstrasse (Wasserwerkstrasse) (Schaffhauserplatz),data/prepared/profiles/Z058_Schaffhauserplatz.csv,47.3805240824023,8.542782388658894,1440
+Z059_Central,Z059,Central,Z059 - Neumühlequai (Sanität) (Central),data/prepared/profiles/Z059_Central.csv,47.38200890913023,8.540436301327434,1440
+Z059_Milchbucktunnel,Z059,Milchbucktunnel,Z059 - Neumühlequai (Sanität) (Milchbucktunnel),data/prepared/profiles/Z059_Milchbucktunnel.csv,47.381455904064104,8.54093448149524,1440
+Z061_Hohlstrasse,Z061,Hohlstrasse,Z061 - Duttweiler Brücke (Hohlstrasse),data/prepared/profiles/Z061_Hohlstrasse.csv,47.38957755009626,8.511737732884527,1440
+Z061_Pfingstweidstrasse,Z061,Pfingstweidstrasse,Z061 - Duttweiler Brücke (Pfingstweidstrasse),data/prepared/profiles/Z061_Pfingstweidstrasse.csv,47.38954884764983,8.511990409303692,1440
+Z062_Allmend,Z062,Allmend,Z062 - Brunaustrasse (Rieterstrasse) (Allmend),data/prepared/profiles/Z062_Allmend.csv,47.354326475873975,8.5258517991825,1440
+Z062_Enge,Z062,Enge,Z062 - Brunaustrasse (Rieterstrasse) (Enge),data/prepared/profiles/Z062_Enge.csv,47.35434290898582,8.525969412334401,1440
+Z063_Albisriederplatz,Z063,Albisriederplatz,Z063 - Albisriederstrasse (Hubertus) (Albisriederplatz),data/prepared/profiles/Z063_Albisriederplatz.csv,47.37733147658815,8.499535478505594,1440
+Z063_Hubertus,Z063,Hubertus,Z063 - Albisriederstrasse (Hubertus) (Hubertus),data/prepared/profiles/Z063_Hubertus.csv,47.3774702941806,8.499434950111368,1440
+Z064_Birmensdorferstrasse,Z064,Birmensdorferstrasse,Z064 - Gutstrasse (Hubertus) (Birmensdorferstrasse),data/prepared/profiles/Z064_Birmensdorferstrasse.csv,47.376430913531586,8.499919733821812,1440
+Z064_Hubertus,Z064,Hubertus,Z064 - Gutstrasse (Hubertus) (Hubertus),data/prepared/profiles/Z064_Hubertus.csv,47.376522431673855,8.499915570538995,1440
+Z065_auswärts,Z065,auswärts,Z065 - Hardturmstrasse (Fischerweg) (auswärts),data/prepared/profiles/Z065_auswärts.csv,47.39170905109492,8.518897109793633,1440
+Z065_einwärts,Z065,einwärts,Z065 - Hardturmstrasse (Fischerweg) (einwärts),data/prepared/profiles/Z065_einwärts.csv,47.39161914024379,8.51898906908272,1440
+Z066_Helvetiaplatz,Z066,Helvetiaplatz,Z066 - Stauffacherstrasse (Feldstrasse) (Helvetiaplatz),data/prepared/profiles/Z066_Helvetiaplatz.csv,47.377702304772555,8.521976974651158,1440
+Z066_Seebahnstrasse,Z066,Seebahnstrasse,Z066 - Stauffacherstrasse (Feldstrasse) (Seebahnstrasse),data/prepared/profiles/Z066_Seebahnstrasse.csv,47.377686567459335,8.52217794226699,1440
+Z067_A3 und Schimmelstrasse,Z067,A3 und Schimmelstrasse,Z067 - Manessestrasse (Stauffacherquai) (A3 und Schimmelstrasse),data/prepared/profiles/Z067_A3 und Schimmelstrasse.csv,47.36930547708145,8.527264999763277,1440
+Z068_Bahnhof Wiedikon,Z068,Bahnhof Wiedikon,Z068 - Schimmelstrasse (Werdstrasse) (Bahnhof Wiedikon),data/prepared/profiles/Z068_Bahnhof Wiedikon.csv,47.37024319765525,8.525012698125085,1440
+Z068_Manessestrasse,Z068,Manessestrasse,Z068 - Schimmelstrasse (Werdstrasse) (Manessestrasse),data/prepared/profiles/Z068_Manessestrasse.csv,47.37021578127958,8.524962883805927,1440
+Z069_Badenerstrasse,Z069,Badenerstrasse,Z069 - Seebahnstrasse (Stauffacherstrasse) (Badenerstrasse),data/prepared/profiles/Z069_Badenerstrasse.csv,47.37852704850412,8.519328226892359,1440
+Z069_Hohlstrasse,Z069,Hohlstrasse,Z069 - Seebahnstrasse (Stauffacherstrasse) (Hohlstrasse),data/prepared/profiles/Z069_Hohlstrasse.csv,47.37878550851512,8.519671028153146,1440
+Z070_Hardplatz,Z070,Hardplatz,Z070 - Hohlstrasse (Erismannstrasse) (Hardplatz),data/prepared/profiles/Z070_Hardplatz.csv,47.38054017249113,8.519595110234201,1440
+Z070_Seebahnstrasse,Z070,Seebahnstrasse,Z070 - Hohlstrasse (Erismannstrasse) (Seebahnstrasse),data/prepared/profiles/Z070_Seebahnstrasse.csv,47.380390654096914,8.519597242575475,1440
+Z071_Albisriederplatz,Z071,Albisriederplatz,Z071 - Badenerstrasse (Zypressenstrasse) (Albisriederplatz),data/prepared/profiles/Z071_Albisriederplatz.csv,47.376922211415916,8.513623307969935,600
+Z071_Seebahnstrasse,Z071,Seebahnstrasse,Z071 - Badenerstrasse (Zypressenstrasse) (Seebahnstrasse),data/prepared/profiles/Z071_Seebahnstrasse.csv,47.37682277025372,8.513512185320067,600
+Z072_auswärts,Z072,auswärts,Z072 - Manessestrasse (Weststrasse) (auswärts),data/prepared/profiles/Z072_auswärts.csv,47.36897007960429,8.524901881687528,1440
+Z072_einwärts,Z072,einwärts,Z072 - Manessestrasse (Weststrasse) (einwärts),data/prepared/profiles/Z072_einwärts.csv,47.368903055450986,8.524998627443635,1440
+Z073_See,Z073,See,Z073 - Stauffacherbrücke (See),data/prepared/profiles/Z073_See.csv,47.37115680332746,8.530596239868975,1440
+Z073_Stauffacher,Z073,Stauffacher,Z073 - Stauffacherbrücke (Stauffacher),data/prepared/profiles/Z073_Stauffacher.csv,47.37111285231324,8.531058641560062,1080
+Z074_Hauptbahnhof,Z074,Hauptbahnhof,Z074 - Stauffacherquai (Stauffacherbrücke) (Hauptbahnhof),data/prepared/profiles/Z074_Hauptbahnhof.csv,47.37145431528711,8.530506071864163,1440
+Z075_See,Z075,See,Z075 - Stauffacherstrasse (Stauffacherbrücke) (See),data/prepared/profiles/Z075_See.csv,47.371151137133154,8.53061519082687,1440
+Z075_Stauffacher,Z075,Stauffacher,Z075 - Stauffacherstrasse (Stauffacherbrücke) (Stauffacher),data/prepared/profiles/Z075_Stauffacher.csv,47.37151936981992,8.530132814144691,1440
+Z076_auswärts,Z076,auswärts,Z076 - Pfingstweidstrasse (Sportweg) (auswärts),data/prepared/profiles/Z076_auswärts.csv,47.39167313281813,8.505315600321229,1440
+Z076_einwärts,Z076,einwärts,Z076 - Pfingstweidstrasse (Sportweg) (einwärts),data/prepared/profiles/Z076_einwärts.csv,47.39204825997651,8.503654097423942,840
+Z077_Manessestrasse,Z077,Manessestrasse,Z077 - Sihlhölzlibrücke (Ulmbergtunnel) (Manessestrasse),data/prepared/profiles/Z077_Manessestrasse.csv,47.36882701019932,8.528659109308855,1440
+Z078_auswärts,Z078,auswärts,Z078 - Birmensdorferstrasse (Wasserschöpfi) (auswärts),data/prepared/profiles/Z078_auswärts.csv,47.36937407227268,8.505346061025707,1440
+Z078_einwärts,Z078,einwärts,Z078 - Birmensdorferstrasse (Wasserschöpfi) (einwärts),data/prepared/profiles/Z078_einwärts.csv,47.3693401207719,8.506100089309687,1440
+Z079_Uetlibergtunnel,Z079,Uetlibergtunnel,Z079 - A3W (A4 Uetlibergtunnel Brunau) (Uetlibergtunnel),data/prepared/profiles/Z079_Uetlibergtunnel.csv,47.347114922947426,8.520002347569006,1440
+Z079_einwärts,Z079,einwärts,Z079 - A3W (A4 Uetlibergtunnel Brunau) (einwärts),data/prepared/profiles/Z079_einwärts.csv,47.346949007453595,8.52035275371031,1440
+Z080_Chur,Z080,Chur,Z080 - A3W (Chur Brunau) (Chur),data/prepared/profiles/Z080_Chur.csv,47.34705542613411,8.520121711850527,1440
+Z080_einwärts,Z080,einwärts,Z080 - A3W (Chur Brunau) (einwärts),data/prepared/profiles/Z080_einwärts.csv,47.34700429740876,8.520231187005958,1440
+Z081_Hardbrücke,Z081,Hardbrücke,Z081 - Pfingstweidstrasse (Welti Furrer Ausfahrt) (Hardbrücke),data/prepared/profiles/Z081_Hardbrücke.csv,47.38772352840563,8.517933398837576,1440
+Z081_auswärts,Z081,auswärts,Z081 - Pfingstweidstrasse (Welti Furrer Ausfahrt) (auswärts),data/prepared/profiles/Z081_auswärts.csv,47.38805488411203,8.517444608368994,1435
+Z082_Albissriederplatz,Z082,Albissriederplatz,Z082 - Hardbrücke (Hardstrasse) (Albissriederplatz),data/prepared/profiles/Z082_Albissriederplatz.csv,47.38318543249688,8.515117080357289,1440
+Z082_Bucheggplatz,Z082,Bucheggplatz,Z082 - Hardbrücke (Hardstrasse) (Bucheggplatz),data/prepared/profiles/Z082_Bucheggplatz.csv,47.38316222642134,8.515165216890997,1440
+Z083_Bucheggplatz,Z083,Bucheggplatz,Z083 - Hardbrücke Rampen (Hohlstrasse) (Bucheggplatz),data/prepared/profiles/Z083_Bucheggplatz.csv,47.383456957178055,8.515613255748413,1440
+Z083_Hohlstrasse,Z083,Hohlstrasse,Z083 - Hardbrücke Rampen (Hohlstrasse) (Hohlstrasse),data/prepared/profiles/Z083_Hohlstrasse.csv,47.38351136445932,8.51533477373783,1440
+Z084_Bleicherweg,Z084,Bleicherweg,Z084 - Angererstrasse Tunnelstrasse (Ulmbergtunnel) (Bleicherweg),data/prepared/profiles/Z084_Bleicherweg.csv,47.366466351300716,8.531568883645788,1440
+Z084_Sihlhölzli,Z084,Sihlhölzli,Z084 - Angererstrasse Tunnelstrasse (Ulmbergtunnel) (Sihlhölzli),data/prepared/profiles/Z084_Sihlhölzli.csv,47.36656277312665,8.531835657530305,1440
+Z085_See,Z085,See,Z085 - Alfred-Escher-Strasse (Ulmbergtunnel) (See),data/prepared/profiles/Z085_See.csv,47.36650144802103,8.531662282054508,1440
+Z085_Sihlhölzli,Z085,Sihlhölzli,Z085 - Alfred-Escher-Strasse (Ulmbergtunnel) (Sihlhölzli),data/prepared/profiles/Z085_Sihlhölzli.csv,47.36655465676169,8.531742812120694,1440
+Z086_Affoltern,Z086,Affoltern,Z086 - Binzmuehlestrasse (Seebacherstrasse) (Affoltern),data/prepared/profiles/Z086_Affoltern.csv,47.414559274953234,8.520496634375954,1440
+Z086_Oerlikon,Z086,Oerlikon,Z086 - Binzmuehlestrasse (Seebacherstrasse) (Oerlikon),data/prepared/profiles/Z086_Oerlikon.csv,47.41450469522589,8.520561784516536,1200
+Z087_Affoltern,Z087,Affoltern,Z087 - Wehntalerstrasse (Nordheimstrasse) (Affoltern),data/prepared/profiles/Z087_Affoltern.csv,47.404223880928235,8.533880431162403,1440
+Z087_einwärts,Z087,einwärts,Z087 - Wehntalerstrasse (Nordheimstrasse) (einwärts),data/prepared/profiles/Z087_einwärts.csv,47.404098351353205,8.53383810273051,1440
+Z088_Affoltern,Z088,Affoltern,Z088 - Regensbergstrasse (Birchstrasse) (Affoltern),data/prepared/profiles/Z088_Affoltern.csv,47.40966822729527,8.537424278824602,1320
+Z088_Oerlikon,Z088,Oerlikon,Z088 - Regensbergstrasse (Birchstrasse) (Oerlikon),data/prepared/profiles/Z088_Oerlikon.csv,47.40955005526877,8.537554346738862,1320
+Z089_auswärts,Z089,auswärts,Z089 - Wallisellenstrasse (Saatlenstrasse) (auswärts),data/prepared/profiles/Z089_auswärts.csv,47.41086896104801,8.56315583371858,1440
+Z089_einwärts,Z089,einwärts,Z089 - Wallisellenstrasse (Saatlenstrasse) (einwärts),data/prepared/profiles/Z089_einwärts.csv,47.410915731484046,8.56297130768755,1440
+Z090_auswärts,Z090,auswärts,Z090 - Winterthurerstrasse (Luchswiesenstrasse) (auswärts),data/prepared/profiles/Z090_auswärts.csv,47.40655142737108,8.584211530000251,1440
+Z090_einwärts,Z090,einwärts,Z090 - Winterthurerstrasse (Luchswiesenstrasse) (einwärts),data/prepared/profiles/Z090_einwärts.csv,47.40656212739204,8.584039511034177,1440
+Z091_Talstrasse,Z091,Talstrasse,Z091 - Dreikönigstrasse (Genferstrasse) (Talstrasse),data/prepared/profiles/Z091_Talstrasse.csv,47.3660430921639,8.533519686016596,1440
+Z092_auswärts,Z092,auswärts,Z092 - Am Wasser (Hardeggstrasse) (auswärts),data/prepared/profiles/Z092_auswärts.csv,47.39723844855568,8.50303281319898,1440
+Z092_einwärts,Z092,einwärts,Z092 - Am Wasser (Hardeggstrasse) (einwärts),data/prepared/profiles/Z092_einwärts.csv,47.397216751165004,8.50300561996929,1440
+Z093_auswärts,Z093,auswärts,Z093 - Hardturmstrasse (Bernoullihäuser) (auswärts),data/prepared/profiles/Z093_auswärts.csv,47.39379154655607,8.508303780652897,1440
+Z093_einwärts,Z093,einwärts,Z093 - Hardturmstrasse (Bernoullihäuser) (einwärts),data/prepared/profiles/Z093_einwärts.csv,47.39374337783941,8.508940105690792,1440
+Z095_Oerlikon,Z095,Oerlikon,Z095 - Schwamendingerstrasse (Dörflistrasse) (Oerlikon),data/prepared/profiles/Z095_Oerlikon.csv,47.40676101592693,8.551042032583728,1440
+Z095_Schwamendingen,Z095,Schwamendingen,Z095 - Schwamendingerstrasse (Dörflistrasse) (Schwamendingen),data/prepared/profiles/Z095_Schwamendingen.csv,47.40673279229068,8.551021170849818,1440
+Z096_auswärts,Z096,auswärts,Z096 - Katzenschwanzstrasse (Witikonerstrasse) (auswärts),data/prepared/profiles/Z096_auswärts.csv,47.360545714489575,8.596773509501578,1440
+Z096_einwärts,Z096,einwärts,Z096 - Katzenschwanzstrasse (Witikonerstrasse) (einwärts),data/prepared/profiles/Z096_einwärts.csv,47.360518276582134,8.596710957238347,1440
+Z097_Bucheggplatz,Z097,Bucheggplatz,Z097 - Hofwiesenstrasse (Brunnenhofweg) (Bucheggplatz),data/prepared/profiles/Z097_Bucheggplatz.csv,47.40116779828503,8.534261426307614,1440
+Z097_Oerlikon,Z097,Oerlikon,Z097 - Hofwiesenstrasse (Brunnenhofweg) (Oerlikon),data/prepared/profiles/Z097_Oerlikon.csv,47.40122554565332,8.534498701871692,1440
+Z098_Letzigrund,Z098,Letzigrund,Z098 - Letzigraben (Hubertus) (Letzigrund),data/prepared/profiles/Z098_Letzigrund.csv,47.37781147351969,8.498839600449452,1440
+Z098_auswärts,Z098,auswärts,Z098 - Letzigraben (Hubertus) (auswärts),data/prepared/profiles/Z098_auswärts.csv,47.37771670763339,8.498689941808433,1440
+Z099_auswärts,Z099,auswärts,Z099 - Albisriederstrasse (Freilagerstrasse) (auswärts),data/prepared/profiles/Z099_auswärts.csv,47.37795574107705,8.49275071308092,1440
+Z099_einwärts,Z099,einwärts,Z099 - Albisriederstrasse (Freilagerstrasse) (einwärts),data/prepared/profiles/Z099_einwärts.csv,47.3778954025705,8.492826578362257,1440
+Z100_Albisriederstrasse,Z100,Albisriederstrasse,Z100 - Rautistrasse (Luggwegstrasse) (Albisriederstrasse),data/prepared/profiles/Z100_Albisriederstrasse.csv,47.38215650348418,8.488440446198242,1440
+Z100_Altstetter-_Luggwegstrasse,Z100,Altstetter-/Luggwegstrasse,Z100 - Rautistrasse (Luggwegstrasse) (Altstetter-/Luggwegstrasse),data/prepared/profiles/Z100_Altstetter-_Luggwegstrasse.csv,47.382254817375326,8.48834363803874,1440
+Z101_auswärts,Z101,auswärts,Z101 - Altstetterstrasse (Algirstrasse) (auswärts),data/prepared/profiles/Z101_auswärts.csv,47.38197678406635,8.483627168089038,1440
+Z101_einwärts,Z101,einwärts,Z101 - Altstetterstrasse (Algirstrasse) (einwärts),data/prepared/profiles/Z101_einwärts.csv,47.381976424759245,8.483666891775396,1440
+Z102_auswärts,Z102,auswärts,Z102 - Badenerstrasse (Farbhof) (auswärts),data/prepared/profiles/Z102_auswärts.csv,47.390247526900005,8.480160055951567,1440
+Z102_einwärts,Z102,einwärts,Z102 - Badenerstrasse (Farbhof) (einwärts),data/prepared/profiles/Z102_einwärts.csv,47.390149196097475,8.48009190606212,1440
+Z103_auswärts,Z103,auswärts,Z103 - Hohlstrasse (Farbhof) (auswärts),data/prepared/profiles/Z103_auswärts.csv,47.39185136055041,8.481511688460825,1440
+Z103_einwärts,Z103,einwärts,Z103 - Hohlstrasse (Farbhof) (einwärts),data/prepared/profiles/Z103_einwärts.csv,47.391898460536666,8.482227817001686,1440
+Z104_Altstetten,Z104,Altstetten,Z104 - Bändliweg (Bändlistrasse) (Altstetten),data/prepared/profiles/Z104_Altstetten.csv,47.39591402336358,8.485343085960778,1440
+Z104_Höngg_Europabrücke,Z104,Höngg/Europabrücke,Z104 - Bändliweg (Bändlistrasse) (Höngg/Europabrücke),data/prepared/profiles/Z104_Höngg_Europabrücke.csv,47.39589562331733,8.485381405866594,1440
+Z105_Forchstrasse,Z105,Forchstrasse,Z105 - Lenggstrasse (Lengghalde) (Forchstrasse),data/prepared/profiles/Z105_Forchstrasse.csv,47.3545213464431,8.574091455393893,1440
+Z105_Südstrasse,Z105,Südstrasse,Z105 - Lenggstrasse (Lengghalde) (Südstrasse),data/prepared/profiles/Z105_Südstrasse.csv,47.3545479651041,8.574064754077387,1440
+Z106_Zoo,Z106,Zoo,Z106 - Zürichbergstrasse (Dreiwiesenstrasse) (Zoo),data/prepared/profiles/Z106_Zoo.csv,47.381665044175094,8.571740704913664,1200
+Z106_einwärts,Z106,einwärts,Z106 - Zürichbergstrasse (Dreiwiesenstrasse) (einwärts),data/prepared/profiles/Z106_einwärts.csv,47.381784259356984,8.571751490503111,1200
+Z107_Zoo,Z107,Zoo,Z107 - Dreiwiesenstrasse (Tobelhofstrasse) (Zoo),data/prepared/profiles/Z107_Zoo.csv,47.37867401668379,8.574959091224896,1200
+Z107_auswärts,Z107,auswärts,Z107 - Dreiwiesenstrasse (Tobelhofstrasse) (auswärts),data/prepared/profiles/Z107_auswärts.csv,47.37863189074083,8.574973872717592,1200
+Z108_auswärts,Z108,auswärts,Z108 - Tobelhofstrasse (Dreiwiesenstrasse) (auswärts),data/prepared/profiles/Z108_auswärts.csv,47.37852611162638,8.574966121552066,1200
+Z109_Schimmelstrasse,Z109,Schimmelstrasse,Z109 - Manessestrasse - Schimmelstrasse (Schimmelstrasse),data/prepared/profiles/Z109_Schimmelstrasse.csv,47.36937131988885,8.525809752474817,600
+Z110_auswärts,Z110,auswärts,Z110 - Autobahn A1L - Ausfahrt Aubrugg (auswärts),data/prepared/profiles/Z110_auswärts.csv,47.40998556548189,8.569842600546686,600
+Z111_auswärts,Z111,auswärts,Z111 - Hagenholzstrasse (Riedgrabenweg) (auswärts),data/prepared/profiles/Z111_auswärts.csv,47.414516078811054,8.559208661407045,240

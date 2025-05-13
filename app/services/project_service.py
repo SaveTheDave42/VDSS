@@ -10,6 +10,24 @@ from app.models.project import Project, ProjectCreate, ProjectUpdate
 # Dictionary: project_id -> Project
 PROJECTS = {}
 
+PROJECTS_FILE = "data/projects/projects.json"
+
+def _load_projects() -> List[Dict[str, Any]]:
+    """Load all projects from the JSON file"""
+    if not os.path.exists(PROJECTS_FILE):
+        return []
+    with open(PROJECTS_FILE, "r", encoding='utf-8') as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return []
+
+def _save_projects(projects: List[Dict[str, Any]]):
+    """Save all projects to the JSON file"""
+    os.makedirs(os.path.dirname(PROJECTS_FILE), exist_ok=True)
+    with open(PROJECTS_FILE, "w", encoding='utf-8') as f:
+        json.dump(projects, f, indent=2, default=str, ensure_ascii=False)
+
 def create_project(project_data: ProjectCreate, file_path: str) -> Project:
     """
     Create a new construction site project.
@@ -21,33 +39,20 @@ def create_project(project_data: ProjectCreate, file_path: str) -> Project:
     Returns:
         The created Project
     """
-    # Generate a unique ID
-    project_id = str(uuid.uuid4())
+    projects = _load_projects()
     
-    # Create the project
-    project = Project(
-        id=project_id,
-        name=project_data.name,
-        file_name=project_data.file_name,
-        file_path=file_path,
-        polygon=project_data.polygon,
-        waiting_areas=project_data.waiting_areas,
-        access_routes=project_data.access_routes,
-        map_bounds=project_data.map_bounds,
-        simulation_start_time=project_data.simulation_start_time,
-        simulation_end_time=project_data.simulation_end_time,
-        simulation_interval=project_data.simulation_interval,
-        created_at=project_data.created_at,
-        updated_at=None
-    )
+    project_dict = project_data.model_dump() # Use model_dump for Pydantic V2
+    project_dict["id"] = str(uuid.uuid4()) # Generate new ID
+    project_dict["file_path"] = file_path
+    project_dict["updated_at"] = None # Explicitly set to None
     
-    # Save the project to our in-memory store
-    PROJECTS[project_id] = project
+    # Ensure all fields from Project model are present
+    # This will use defaults from ProjectBase if not provided in ProjectCreate
+    full_project_data = Project(**project_dict) 
     
-    # Save to filesystem as well (for persistence)
-    _save_projects_to_disk()
-    
-    return project
+    projects.append(full_project_data.model_dump())
+    _save_projects(projects)
+    return full_project_data
 
 def get_project(project_id: str) -> Optional[Project]:
     """
@@ -59,43 +64,54 @@ def get_project(project_id: str) -> Optional[Project]:
     Returns:
         The Project if found, None otherwise
     """
-    return PROJECTS.get(project_id)
+    projects = _load_projects()
+    for proj_dict in projects:
+        if proj_dict.get("id") == project_id:
+            return Project(**proj_dict)
+    return None
 
-def update_project(project_id: str, project_update: ProjectUpdate) -> Project:
+def update_project(project_id: str, project_update_data: ProjectUpdate) -> Optional[Project]:
     """
     Update a project.
     
     Args:
         project_id: The ID of the project to update
-        project_update: ProjectUpdate model with fields to update
+        project_update_data: ProjectUpdate model with fields to update
         
     Returns:
-        The updated Project
+        The updated Project if found, None otherwise
         
     Raises:
         KeyError: If the project is not found
     """
-    if project_id not in PROJECTS:
-        raise KeyError(f"Project {project_id} not found")
+    projects = _load_projects()
+    project_index = -1
     
-    # Get the existing project
-    project = PROJECTS[project_id]
+    for i, proj_dict in enumerate(projects):
+        if proj_dict.get("id") == project_id:
+            project_index = i
+            break
+            
+    if project_index == -1:
+        return None # Project not found
+
+    # Get existing project data
+    existing_project_dict = projects[project_index]
     
-    # Update fields if they exist in the update data
-    update_data = project_update.dict(exclude_unset=True)
+    # Update with new data, excluding unset fields to keep existing values
+    update_data_dict = project_update_data.model_dump(exclude_unset=True)
     
-    for field, value in update_data.items():
-        if value is not None:
-            setattr(project, field, value)
+    for key, value in update_data_dict.items():
+        existing_project_dict[key] = value
     
-    # Set the updated timestamp
-    project.updated_at = datetime.now()
+    existing_project_dict["updated_at"] = datetime.now()
     
-    # Save changes
-    PROJECTS[project_id] = project
-    _save_projects_to_disk()
+    # Validate and create the updated Project object
+    updated_project = Project(**existing_project_dict)
+    projects[project_index] = updated_project.model_dump()
     
-    return project
+    _save_projects(projects)
+    return updated_project
 
 def get_all_projects() -> List[Project]:
     """
@@ -104,7 +120,8 @@ def get_all_projects() -> List[Project]:
     Returns:
         List of all projects
     """
-    return list(PROJECTS.values())
+    projects_data = _load_projects()
+    return [Project(**proj) for proj in projects_data]
 
 def delete_project(project_id: str) -> None:
     """
@@ -116,12 +133,9 @@ def delete_project(project_id: str) -> None:
     Raises:
         KeyError: If the project is not found
     """
-    if project_id not in PROJECTS:
-        raise KeyError(f"Project {project_id} not found")
-    
-    # Remove the project
-    del PROJECTS[project_id]
-    _save_projects_to_disk()
+    projects = _load_projects()
+    projects = [proj for proj in projects if proj.get("id") != project_id]
+    _save_projects(projects)
 
 def _load_projects_from_disk() -> None:
     """Load projects from the disk storage"""

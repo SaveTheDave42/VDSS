@@ -114,13 +114,9 @@ if st.session_state.page == "project_setup":
     show_project_setup()
     
 elif st.session_state.page == "admin":
-    st.header("Admin Panel")
-    
-    if st.session_state.current_project:
-        from pages.admin import show_admin_panel
-        show_admin_panel(st.session_state.current_project)
-    else:
-        st.info("Please select a project from the sidebar or create a new one in the Project Setup page.")
+    # Use the new show_admin function
+    from pages.admin import show_admin
+    show_admin()
     
 elif st.session_state.page == "dashboard":
     st.header("Traffic Dashboard")

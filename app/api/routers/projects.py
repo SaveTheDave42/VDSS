@@ -20,7 +20,7 @@ def process_geojson(geojson_data):
     Extracts geometry from FeatureCollection and ensures coordinates are preserved.
     """
     if not geojson_data:
-        return []
+        return None # Return None if no data
         
     # Check if it's a FeatureCollection
     if isinstance(geojson_data, dict) and geojson_data.get('type') == 'FeatureCollection':
@@ -30,8 +30,8 @@ def process_geojson(geojson_data):
             if 'geometry' in feature:
                 # Return the geometry directly to preserve coordinates
                 return feature['geometry']
-        # Return empty but valid GeoJSON structure if no features
-        return {"type": "Polygon", "coordinates": [[]]}
+        # Return None if no features
+        return None
     
     # If it's already a geometry with coordinates, return as is
     elif isinstance(geojson_data, dict) and 'type' in geojson_data and 'coordinates' in geojson_data:
@@ -42,11 +42,11 @@ def process_geojson(geojson_data):
         # If it's a list of geometries, return the first one
         if geojson_data and isinstance(geojson_data[0], dict) and 'type' in geojson_data[0] and 'coordinates' in geojson_data[0]:
             return geojson_data[0]
-        # Otherwise, return empty
-        return {"type": "Polygon", "coordinates": [[]]}
+        # Otherwise, return empty list (for waiting_areas/access_routes) or None for single geometries
+        return [] 
     
-    # Return empty but valid GeoJSON structure for invalid data
-    return {"type": "Polygon", "coordinates": [[]]}
+    # Return None for invalid data
+    return None
 
 @router.post("/", response_model=Project)
 async def create_project_endpoint(
@@ -55,7 +55,12 @@ async def create_project_endpoint(
     polygon: str = Form(...), # GeoJSON
     waiting_areas: Optional[str] = Form(None), # GeoJSON
     access_routes: Optional[str] = Form(None), # GeoJSON
-    map_bounds: str = Form(...) # GeoJSON
+    map_bounds: str = Form(...), # GeoJSON
+    # Add traffic data fields
+    primary_counter: Optional[str] = Form(None), # JSON string of primary counter object
+    selected_counters: Optional[str] = Form(None), # JSON string of list of selected counter objects
+    delivery_days: Optional[str] = Form(None), # JSON string of list of delivery days
+    delivery_hours: Optional[str] = Form(None) # JSON string of delivery hours dict
 ):
     """Create a new construction site project"""
     try:
@@ -79,27 +84,36 @@ async def create_project_endpoint(
         map_bounds_data = process_geojson(json.loads(map_bounds))
         
         # Waiting areas and access routes are processed differently
-        waiting_areas_json = json.loads(waiting_areas) if waiting_areas else None
-        access_routes_json = json.loads(access_routes) if access_routes else None
+        waiting_areas_json = json.loads(waiting_areas) if waiting_areas else []
+        access_routes_json = json.loads(access_routes) if access_routes else []
         
-        # For waiting areas and access routes, we need to handle Feature Collections specially
-        if waiting_areas_json and isinstance(waiting_areas_json, dict) and waiting_areas_json.get('type') == 'FeatureCollection':
-            # Get all geometries from features
-            waiting_areas_data = []
-            for feature in waiting_areas_json.get('features', []):
-                if 'geometry' in feature:
-                    waiting_areas_data.append(feature['geometry'])
-        else:
-            waiting_areas_data = [waiting_areas_json] if waiting_areas_json else []
+        waiting_areas_data = []
+        if waiting_areas_json:
+            if isinstance(waiting_areas_json, dict) and waiting_areas_json.get('type') == 'FeatureCollection':
+                for feature in waiting_areas_json.get('features', []):
+                    if 'geometry' in feature:
+                        waiting_areas_data.append(feature['geometry'])
+            elif isinstance(waiting_areas_json, list): # Handle list of geometries
+                waiting_areas_data = waiting_areas_json
+            else: # Single geometry
+                waiting_areas_data = [waiting_areas_json]
         
-        if access_routes_json and isinstance(access_routes_json, dict) and access_routes_json.get('type') == 'FeatureCollection':
-            # Get all geometries from features
-            access_routes_data = []
-            for feature in access_routes_json.get('features', []):
-                if 'geometry' in feature:
-                    access_routes_data.append(feature['geometry'])
-        else:
-            access_routes_data = [access_routes_json] if access_routes_json else []
+        access_routes_data = []
+        if access_routes_json:
+            if isinstance(access_routes_json, dict) and access_routes_json.get('type') == 'FeatureCollection':
+                for feature in access_routes_json.get('features', []):
+                    if 'geometry' in feature:
+                        access_routes_data.append(feature['geometry'])
+            elif isinstance(access_routes_json, list): # Handle list of geometries
+                access_routes_data = access_routes_json
+            else: # Single geometry
+                access_routes_data = [access_routes_json]
+
+        # Parse traffic data from JSON strings
+        primary_counter_data = json.loads(primary_counter) if primary_counter else None
+        selected_counters_data = json.loads(selected_counters) if selected_counters else []
+        delivery_days_data = json.loads(delivery_days) if delivery_days else []
+        delivery_hours_data = json.loads(delivery_hours) if delivery_hours else {}
         
         # Create project
         project_data = ProjectCreate(
@@ -112,7 +126,12 @@ async def create_project_endpoint(
             simulation_start_time="06:00",
             simulation_end_time="18:00",
             simulation_interval="1h",
-            created_at=datetime.now()
+            created_at=datetime.now(),
+            # Add traffic data to ProjectCreate model
+            primary_counter=primary_counter_data,
+            selected_counters=selected_counters_data,
+            delivery_days=delivery_days_data,
+            delivery_hours=delivery_hours_data
         )
         
         # Save file to disk
