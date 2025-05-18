@@ -4,340 +4,266 @@ import json
 import requests
 import os
 from datetime import datetime, date, timedelta
-import folium
-from streamlit_folium import folium_static
+import pydeck as pdk
 import plotly.express as px
 import plotly.graph_objects as go
-from io import BytesIO
 import numpy as np
+from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
+from utils.dashoboard_utils import build_segments_for_hour, build_hourly_layer_cache, render_hourly_traffic_component, get_week_options, get_days_in_week
+import streamlit.components.v1 as components
+import pages.dashboard as _dash
 
 # Define API URL
 API_URL = "http://localhost:8000"
 
 def show_resident_info(project):
     """Show the resident information page with simplified traffic information"""
-    st.markdown(f"## Construction Site Traffic Information: {project['name']}")
+    # Set widget width for resident info
+    st.session_state.widget_width_percent = 35
     
-    # Introduction
-    st.info("""
-    This page provides traffic information for residents affected by the ongoing construction project.
+    st.markdown(f"<h2 style='text-align: center; color: white;'>Construction Site Traffic Information</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align: center; color: white;'>{project['name']}</h3>", unsafe_allow_html=True)
     
-    Below you can find:
-    - Current and upcoming traffic conditions
-    - Daily traffic forecasts
-    - Recommendations for travel
-    """)
+    # Center map view on project bounds
+    view_key = f"resident_info_view_set_{project.get('id')}"
+    if view_key not in st.session_state:
+        if "map_bounds" in project:
+            update_map_view_to_project_bounds(project.get("map_bounds"))
+        st.session_state[view_key] = True
     
-    # Get simulation data
-    simulation_data = get_simulation_data(project['id'])
-    
-    if not simulation_data:
+    # ------------------------------------------------------------------
+    # We no longer rely on simulation results from the backend. Instead we
+    # reuse the same on-the-fly OSM simulation that the dashboard uses.
+    # ------------------------------------------------------------------
+
+    # Pre-compute base OSM segments once
+    base_osm_segments = _dash.get_base_osm_segments(project)
+    if not base_osm_segments:
         st.warning("No traffic data available yet. Please check back later.")
+        st.session_state.map_layers = []
         return
     
-    # Today's date
+    # 1. Select day dropdown (similar to dashboard)
+    # Determine if today is Saturday (5) or Sunday (6)
     today = date.today()
-    today_str = today.strftime("%Y-%m-%d")
+    is_weekend = today.weekday() >= 5  # If today is Saturday or Sunday
+
+    # Get week options
+    week_options = get_week_options()
+    today_cal = date.today().isocalendar()
     
-    # Get available dates (today and next 3 days)
-    available_dates = list(simulation_data.keys())
-    available_dates.sort()  # Sort dates
+    # Default to current week, or next week if it's the weekend
+    default_week_index = next(
+        (i for i, option in enumerate(week_options) 
+         if (option["year"] == today_cal[0] and option["week"] == (today_cal[1] + 1 if is_weekend else today_cal[1]))), 
+        len(week_options) // 2
+    )
     
-    # Filter for today and next 3 days only
-    upcoming_dates = [d for d in available_dates if datetime.strptime(d, "%Y-%m-%d").date() >= today][:4]
+    current_week_key = f"current_resident_week_{project.get('id', 'default')}"
+    if current_week_key not in st.session_state:
+        st.session_state[current_week_key] = None
     
-    # Show current traffic conditions
-    st.markdown("## Today's Traffic Conditions")
+    selected_week_dict = st.selectbox("Select Week", options=week_options, index=default_week_index, 
+                                      format_func=lambda x: x["label"], key="week_resident_ctrl")
     
-    if today_str in simulation_data:
-        # Get the current hour (or nearest available)
-        current_hour = datetime.now().hour
-        available_hours = list(simulation_data[today_str].keys())
+    selected_week_id = f"{selected_week_dict['year']}_{selected_week_dict['week']}"
+    if st.session_state[current_week_key] != selected_week_id:
+        st.session_state[current_week_key] = selected_week_id
+    
+    # Get delivery days from project
+    delivery_days_names = project.get("delivery_days", ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"])
+    days_in_week = get_days_in_week(selected_week_dict["year"], selected_week_dict["week"], delivery_days_names)
+    
+    # Default to today if it's in the list, otherwise first day of the week
+    default_day_index = next((i for i, d in enumerate(days_in_week) if d == today), 0)
+    
+    # Select day dropdown
+    selected_date_for_map = st.selectbox(
+        "Select Day", 
+        options=days_in_week, 
+        index=default_day_index,
+        format_func=lambda d: f"{d.strftime('%A, %d.%m.%Y')}", 
+        key="day_resident_ctrl"
+    ) if days_in_week else today
+    
+    selected_date_str = selected_date_for_map.strftime("%Y-%m-%d")
+    
+    # 2. Traffic condition warning panel (Daily Traffic Conditions)
+    st.markdown("<h3 style='color: white;'>Daily Traffic Conditions</h3>", unsafe_allow_html=True)
+    
+    # ---- Obtain hourly traffic data via dashboard logic ----
+    delivery_hours_cfg = project.get("delivery_hours", {})
+    dh_start = delivery_hours_cfg.get("start", "06:00")
+    dh_end   = delivery_hours_cfg.get("end", "18:00")
+
+    start_hour_int = int(dh_start.split(":")[0]) if ":" in dh_start else 6
+    end_hour_int   = int(dh_end.split(":")[0])   if ":" in dh_end else 18
+
+    available_hours = list(range(start_hour_int, end_hour_int+1))
+
+    current_hour = datetime.now().hour
+    closest_hour = min(available_hours, key=lambda x: abs(x - current_hour))
+
+    hour_data = _dash.get_traffic_data(selected_date_str, closest_hour, project, base_osm_segments)
+    if not hour_data:
+        hour_data = {"traffic_segments": [], "stats": {"total_traffic": 0, "average_congestion": 0, "deliveries_count": 0}}
+    
+    # Display traffic status
+    hour_data["stats"]["average_congestion"] = hour_data["stats"].get("average_congestion", 0)
+    congestion_level = hour_data["stats"]["average_congestion"]
+    
+    if congestion_level < 0.3:
+        status = "Low Traffic"
+        color = "green"
+    elif congestion_level < 0.7:
+        status = "Moderate Traffic"
+        color = "orange"
+    else:
+        status = "Heavy Traffic"
+        color = "red"
+    
+    # Show status card
+    st.markdown(f"""
+    <div style="padding: 20px; border-radius: 10px; background-color: {color}; color: white; text-align: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;">{status}</h3>
+        <p style="margin: 10px 0 0 0;">Current traffic level around the construction site</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Hour slider to select which hour to visualise
+    selected_hour_for_map = st.slider(
+        "Hour",
+        min_value=start_hour_int,
+        max_value=end_hour_int,
+        value=closest_hour,
+        step=1,
+        format="%d:00",
+        key=f"resident_hour_slider_{selected_date_str}"
+    )
+    
+    # Get bounds for rendering the map correctly
+    if "map_view_state" in st.session_state:
+        initial_view_state = {
+            "longitude": st.session_state.map_view_state.longitude,
+            "latitude": st.session_state.map_view_state.latitude,
+            "zoom": st.session_state.map_view_state.zoom,
+            "pitch": 0,
+            "bearing": 0
+        }
+    else:
+        # Default view state if not set
+        initial_view_state = {
+            "longitude": 8.5417, 
+            "latitude": 47.3769, 
+            "zoom": 12,
+            "pitch": 0,
+            "bearing": 0
+        }
+    
+    # Helper function to get traffic data for a specific hour
+    def get_hour_data(date_str, hour_int):
+        return _dash.get_traffic_data(date_str, hour_int, project, base_osm_segments)
+    
+    # ---- Prepare map layers like dashboard.py ----
+    layers_for_pydeck = []
+    
+    # 1. Project Polygon Layer
+    project_polygon_data = project.get("polygon", {})
+    if "coordinates" in project_polygon_data and project_polygon_data["coordinates"]:
+        polygon_feature = create_geojson_feature(project_polygon_data, {"name": "Construction Site"})
+        polygon_layer = create_pydeck_geojson_layer(
+            data=[polygon_feature], 
+            layer_id="resident_project_polygon", 
+            fill_color=[220, 53, 69, 160], 
+            line_color=[220, 53, 69, 255],
+            get_line_width=20,
+            line_width_min_pixels=2,
+            pickable=True, 
+            tooltip_html="<b>Construction Site</b><br/>{properties.name}"
+        )
+        layers_for_pydeck.append(polygon_layer)
+    
+    # 2. Traffic Segments Layer
+    # Get the traffic data for the selected hour
+    current_traffic_data = get_hour_data(selected_date_str, selected_hour_for_map)
+    
+    if current_traffic_data and "traffic_segments" in current_traffic_data:
+        segments_data = []
         
-        if not available_hours:
-            st.info("No traffic data available for today.")
-        else:
-            # Find closest available hour
-            available_hours.sort()
-            closest_hour = min(available_hours, key=lambda x: abs(x - current_hour))
-            
-            # Get the data
-            hour_data = simulation_data[today_str][closest_hour]
-            
-            # Display traffic status
-            congestion_level = hour_data["stats"]["average_congestion"]
-            
-            if congestion_level < 0.3:
-                status = "Low Traffic"
-                color = "green"
-            elif congestion_level < 0.7:
-                status = "Moderate Traffic"
-                color = "orange"
+        for segment in current_traffic_data["traffic_segments"]:
+            congestion = segment.get("congestion_level", 0)
+            # Colour depending on congestion
+            if congestion >= 0.7:
+                color = [220, 53, 69, 180]  # Red
+            elif congestion >= 0.3:
+                color = [255, 193, 7, 180]  # Yellow/Orange
             else:
-                status = "Heavy Traffic"
-                color = "red"
+                color = [40, 167, 69, 180]  # Green
             
-            # Show status card
-            st.markdown(f"""
-            <div style="padding: 20px; border-radius: 10px; background-color: {color}; color: white; text-align: center; margin-bottom: 20px;">
-                <h3 style="margin: 0;">{status}</h3>
-                <p style="margin: 10px 0 0 0;">Current traffic level around the construction site</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Display simple metrics
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.metric("Traffic Volume", hour_data["stats"]["total_traffic"])
-            
-            with col2:
-                st.metric("Congestion Level", f"{congestion_level:.1f}/1.0")
-            
-            with col3:
-                st.metric("Construction Vehicles", hour_data["stats"]["deliveries_count"])
-            
-            # Create a simplified traffic map
-            st.markdown("### Traffic Map")
-            
-            # Extract coordinates for map centering
-            polygon_coords = project["polygon"]["coordinates"][0]
-            centroid_lon = sum(p[0] for p in polygon_coords) / len(polygon_coords)
-            centroid_lat = sum(p[1] for p in polygon_coords) / len(polygon_coords)
-            
-            # Create map
-            m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=14)
-            
-            # Add construction site polygon
-            folium.GeoJson(
-                project["polygon"],
-                name="Construction Site",
-                style_function=lambda x: {"fillColor": "red", "color": "red", "weight": 2, "fillOpacity": 0.4}
-            ).add_to(m)
-            
-            # Add traffic segments with simplified colors
-            traffic_segments = hour_data["time_steps"][0]["traffic_segments"]
-            
-            for segment in traffic_segments:
-                # Calculate color based on congestion
-                congestion = segment["congestion_level"]
-                
-                if congestion < 0.3:
-                    color = "green"
-                elif congestion < 0.7:
-                    color = "orange"
-                else:
-                    color = "red"
-                
-                # Create simple popup content
-                popup_content = f"Traffic Level: {congestion:.1f}/1.0"
-                
-                # Create line
-                points = [(coord[1], coord[0]) for coord in segment["coordinates"]]
-                
-                folium.PolyLine(
-                    points,
-                    color=color,
-                    weight=5,
-                    opacity=0.8,
-                    popup=folium.Popup(popup_content, max_width=200)
-                ).add_to(m)
-            
-            # Add legend
-            legend_html = """
-            <div style="position: fixed; bottom: 50px; left: 50px; z-index:1000; padding: 10px; background-color: white; border: 2px solid grey; border-radius: 5px">
-            <h4>Traffic Level</h4>
-            <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                <div style="background-color: green; width: 20px; height: 5px; margin-right: 5px;"></div>
-                <div>Low</div>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                <div style="background-color: orange; width: 20px; height: 5px; margin-right: 5px;"></div>
-                <div>Medium</div>
-            </div>
-            <div style="display: flex; align-items: center;">
-                <div style="background-color: red; width: 20px; height: 5px; margin-right: 5px;"></div>
-                <div>High</div>
-            </div>
-            </div>
-            """
-            
-            m.get_root().html.add_child(folium.Element(legend_html))
-            
-            # Display the map
-            folium_static(m)
-    else:
-        st.info("No traffic data available for today.")
-    
-    # Show forecast for coming days
-    st.markdown("## Traffic Forecast")
-    
-    if upcoming_dates:
-        # Tabs for each day
-        day_tabs = st.tabs([
-            "Today" if d == today_str else datetime.strptime(d, "%Y-%m-%d").strftime("%A, %b %d")
-            for d in upcoming_dates
-        ])
+            segments_data.append({
+                "path": segment.get("coordinates", []),
+                "name": segment.get("name", "Road"),
+                "highway_type": segment.get("highway_type", "Unknown"),
+                "traffic_volume": segment.get("traffic_volume", 0),
+                "congestion": congestion,
+                "color": color,
+                # PathLayer width in px – narrower when high congestion
+                "width": max(2, 8 - (congestion * 5))
+            })
         
-        # For each upcoming date
-        for i, date_str in enumerate(upcoming_dates):
-            with day_tabs[i]:
-                if date_str in simulation_data:
-                    # Get hourly data for this day
-                    hours = []
-                    hourly_traffic = []
-                    hourly_congestion = []
-                    
-                    for hour, hour_data in sorted(simulation_data[date_str].items()):
-                        hours.append(f"{hour}:00")
-                        hourly_traffic.append(hour_data["stats"]["total_traffic"])
-                        hourly_congestion.append(hour_data["stats"]["average_congestion"])
-                    
-                    # Create a daily plot
-                    fig = go.Figure()
-                    
-                    # Traffic bars
-                    fig.add_trace(go.Bar(
-                        x=hours,
-                        y=hourly_traffic,
-                        name="Traffic Volume",
-                        marker_color="skyblue",
-                        opacity=0.7
-                    ))
-                    
-                    # Congestion line
-                    fig.add_trace(go.Scatter(
-                        x=hours,
-                        y=hourly_congestion,
-                        mode="lines+markers",
-                        name="Congestion Level",
-                        line=dict(color="red", width=2),
-                        yaxis="y2"
-                    ))
-                    
-                    # Update layout for dual y-axis
-                    fig.update_layout(
-                        xaxis=dict(
-                            title="Hour of Day",
-                            titlefont=dict(color="black"),
-                            tickfont=dict(color="black")
-                        ),
-                        yaxis=dict(
-                            title="Traffic Volume",
-                            titlefont=dict(color="blue"),
-                            tickfont=dict(color="blue"),
-                            side="left"
-                        ),
-                        yaxis2=dict(
-                            title="Congestion Level",
-                            titlefont=dict(color="red"),
-                            tickfont=dict(color="red"),
-                            anchor="x",
-                            overlaying="y",
-                            side="right",
-                            range=[0, 1]
-                        ),
-                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                        margin=dict(l=20, r=70, t=30, b=20),
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Calculate peak and low traffic times
-                    congestion_with_hour = [(hour, cong) for hour, cong in zip(hours, hourly_congestion)]
-                    congestion_with_hour.sort(key=lambda x: x[1])
-                    
-                    low_traffic_times = [t[0] for t in congestion_with_hour[:3]]
-                    peak_traffic_times = [t[0] for t in congestion_with_hour[-3:]]
-                    
-                    # Show recommendations
-                    st.markdown("### Travel Recommendations")
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown("#### Best Times to Travel")
-                        for time in low_traffic_times:
-                            st.markdown(f"- {time}")
-                    
-                    with col2:
-                        st.markdown("#### Avoid Travel During")
-                        for time in peak_traffic_times:
-                            st.markdown(f"- {time}")
-                else:
-                    st.info("No traffic data available for this day.")
-    else:
-        st.info("No forecast data available for upcoming days.")
+        if segments_data:
+            traffic_layer = create_pydeck_path_layer(
+                data=segments_data,
+                layer_id="resident_traffic_paths",
+                pickable=True,
+                tooltip_html="<b>{name}</b><br/>Volume: {traffic_volume}<br/>Congestion: {congestion:.2f}"
+            )
+            layers_for_pydeck.append(traffic_layer)
     
-    # Email notifications section
-    st.markdown("## Stay Informed")
+    # Update map layers in session state
+    st.session_state.map_layers = layers_for_pydeck
     
+    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+
+    # --- Fine-tune panel & element spacing ----------------------------------
     st.markdown("""
-    Get regular traffic updates and notifications about the construction project.
-    Sign up for email notifications to receive:
-    
-    - Daily traffic forecasts
-    - Construction schedule updates
-    - Traffic alerts for high congestion periods
-    """)
-    
-    # Email signup form
-    with st.form("email_form"):
-        col1, col2 = st.columns([3, 1])
-        
-        with col1:
-            email = st.text_input("Email Address")
-        
-        with col2:
-            frequency = st.selectbox("Frequency", ["Daily", "Weekly"])
-        
-        submit_button = st.form_submit_button("Subscribe")
-        
-        if submit_button:
-            if email and "@" in email and "." in email:
-                # In a real app, this would connect to an API to register the email
-                st.success(f"Thank you! You have been subscribed to {frequency.lower()} updates.")
-                
-                # Show example of what they would receive
-                with st.expander("Example Email Update"):
-                    st.markdown(f"""
-                    **Subject:** Traffic Update for {project['name']} - {today.strftime('%b %d, %Y')}
-                    
-                    Dear Resident,
-                    
-                    Here is your traffic update for the construction project at {project['name']}.
-                    
-                    **Today's Traffic Conditions:**
-                    - Peak traffic times: 8:00, 17:00
-                    - Best travel times: 10:00, 14:00
-                    
-                    **Tomorrow's Forecast:**
-                    - Expected traffic level: Moderate
-                    - Construction activity: Heavy equipment delivery scheduled between 9:00-11:00
-                    
-                    For more detailed information, please visit our website.
-                    
-                    Regards,
-                    Construction Site Management Team
-                    """)
-            else:
-                st.error("Please enter a valid email address.")
+    <style>
+        /* Revert background opacity to original */
+        div[data-testid='column']:nth-of-type(2) {
+            background: rgba(45, 55, 70, 0.97) !important;
+        }
+
+        /* Push first metric row a bit downward so it doesn't hug the top edge */
+        div[data-testid='stMetric']:first-of-type {
+            margin-top: 12px !important;
+        }
+
+        /* Reduce extra gap before the hour slider */
+        .stSlider [data-baseweb='slider'] {
+            margin-top: 4px !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 def get_simulation_data(project_id):
     """Get simulation data for the resident info page"""
     try:
-        # Try to get real data first
+        # Versuchen, echte Daten von der API zu erhalten
+        api_result = None
         try:
             response = requests.get(
                 f"{API_URL}/api/simulation/{project_id}/results"
             )
             
-            if response.status_code == 200:
-                return response.json()
-        except:
-            pass
+            if response.status_code == 200 and response.text and response.text != "null":
+                api_result = response.json()
+                if api_result:
+                    return api_result
+        except Exception as e:
+            print(f"API request failed: {str(e)}")  # Log to console instead of UI
         
-        # If that fails, use the same synthetic data generator as in dashboard.py
+        # Wenn API-Anfrage fehlschlägt oder leere Daten zurückgibt, synthetische Daten erzeugen
+        st.info("Using synthetic data for visualization (API data not available).")
         synthetic_data = {}
         
         # Generate data for the last 7 days and next 7 days
@@ -356,52 +282,34 @@ def get_simulation_data(project_id):
                     "id": f"{project_id}_{date_str}_{hour}",
                     "project_id": project_id,
                     "execution_time": datetime.now().isoformat(),
-                    "time_steps": [
-                        {
-                            "time": f"{date_str}T{hour:02d}:00:00",
-                            "traffic_segments": [
-                                {
-                                    "segment_id": f"segment_{j}",
-                                    "start_node": f"node_a_{j}",
-                                    "end_node": f"node_b_{j}",
-                                    "length": 100 + j * 50,
-                                    "speed_limit": 50,
-                                    "traffic_volume": int(50 + np.random.randint(0, 100) * (1 + 0.5 * (j % 3))),
-                                    "congestion_level": min(1.0, 0.2 + np.random.random() * 0.6 * (1 + 0.2 * (j % 3))),
-                                    "coordinates": [
-                                        # Generate some coordinates that spread out from a center point
-                                        [8.54 + (j % 3) * 0.005, 47.375 + (j // 3) * 0.005],
-                                        [8.54 + (j % 3) * 0.005 + 0.002, 47.375 + (j // 3) * 0.005 + 0.002]
-                                    ]
-                                } for j in range(10)  # 10 road segments
-                            ],
-                            "waiting_areas_status": {
-                                f"area_{k}": {
-                                    "capacity": 5,
-                                    "occupied": min(5, int(np.random.randint(0, 6))),
-                                    "available": max(0, 5 - int(np.random.randint(0, 6)))
-                                } for k in range(2)  # 2 waiting areas
-                            }
-                        }
-                    ],
-                    "traffic_volumes": {
-                        f"segment_{j}": int(50 + np.random.randint(0, 100) * (1 + 0.5 * (j % 3)))
-                        for j in range(10)
-                    },
-                    "congestion_points": [
+                    "traffic_segments": [
                         {
                             "segment_id": f"segment_{j}",
-                            "congestion_level": 0.8 + np.random.random() * 0.2,
+                            "start_node": f"node_a_{j}",
+                            "end_node": f"node_b_{j}",
+                            "length": 100 + j * 50,
+                            "speed_limit": 50,
+                            "traffic_volume": int(50 + np.random.randint(0, 100) * (1 + 0.5 * (j % 3))),
+                            "congestion_level": min(1.0, 0.2 + np.random.random() * 0.6 * (1 + 0.2 * (j % 3))),
                             "coordinates": [
+                                # Generate some coordinates that spread out from a center point
                                 [8.54 + (j % 3) * 0.005, 47.375 + (j // 3) * 0.005],
                                 [8.54 + (j % 3) * 0.005 + 0.002, 47.375 + (j // 3) * 0.005 + 0.002]
-                            ]
-                        } for j in range(3) if np.random.random() > 0.7  # Random congestion points
+                            ],
+                            "name": f"Road {j}"
+                        } for j in range(10)  # 10 road segments
                     ],
+                    "waiting_areas_status": {
+                        "area_0": {
+                            "capacity": 10,
+                            "occupied": min(10, int(np.random.randint(0, 8))),
+                            "available": max(0, 10 - int(np.random.randint(0, 8)))
+                        }
+                    },
                     "stats": {
-                        "total_traffic": int(500 + np.random.randint(-200, 300) * (1 + 0.2 * (hour - 6) - 0.2 * abs(hour - 12))),
-                        "average_congestion": min(1.0, 0.3 + np.random.random() * 0.4 * (1 + 0.2 * (hour - 6) - 0.2 * abs(hour - 12))),
-                        "deliveries_count": int(5 + np.random.randint(0, 10) * (1 + 0.2 * (hour - 6) - 0.2 * abs(hour - 12))),
+                        "total_traffic": int(500 + np.random.randint(-100, 200) * (1 + 0.2 * (hour - 6) - 0.2 * abs(hour - 12))),
+                        "average_congestion": min(0.9, max(0.1, 0.3 + np.random.random() * 0.4 * (1 + 0.2 * (hour - 6) - 0.2 * abs(hour - 12)))),
+                        "deliveries_count": int(3 + np.random.randint(0, 8) * (1 + 0.2 * (hour - 6) - 0.2 * abs(hour - 12))),
                         "construction_phase": "Phase 1"
                     }
                 }
@@ -412,4 +320,41 @@ def get_simulation_data(project_id):
     
     except Exception as e:
         st.error(f"Error getting simulation data: {str(e)}")
-        return None 
+        return None
+
+def create_geojson_feature(geometry, properties=None):
+    '''Wraps a GeoJSON geometry into a GeoJSON Feature structure.'''
+    if properties is None: properties = {}
+    return {"type": "Feature", "geometry": geometry, "properties": properties}
+
+def create_pydeck_geojson_layer(
+    data, layer_id, fill_color=[255, 255, 255, 100], line_color=[0, 0, 0, 200],
+    line_width_min_pixels=1, get_line_width=10, opacity=0.5, stroked=True, filled=True,
+    extruded=False, wireframe=True, pickable=False, tooltip_html=None, auto_highlight=True,
+    highlight_color=[0, 0, 128, 128]
+):
+    '''Creates a PyDeck GeoJsonLayer with specified parameters.'''
+    layer_config = {
+        "id": layer_id, "data": data, "opacity": opacity, "stroked": stroked, "filled": filled,
+        "extruded": extruded, "wireframe": wireframe, "get_fill_color": fill_color,
+        "get_line_color": line_color, "get_line_width": get_line_width,
+        "line_width_min_pixels": line_width_min_pixels, "pickable": pickable,
+        "auto_highlight": auto_highlight, "highlight_color": highlight_color
+    }
+    if tooltip_html and pickable: layer_config["tooltip"] = {"html": tooltip_html}
+    return pdk.Layer("GeoJsonLayer", **layer_config)
+
+def create_pydeck_path_layer(
+    data, layer_id, get_path="path", get_color="color", get_width="width",
+    width_scale=1, width_min_pixels=2, width_max_pixels=10, pickable=False, tooltip_html=None,
+    auto_highlight=True, highlight_color=[0,0,128,128]
+):
+    '''Creates a PyDeck PathLayer.'''
+    layer_config = {
+        "id": layer_id, "data": data, "pickable": pickable, "get_path": get_path,
+        "get_color": get_color, "get_width": get_width, "width_scale": width_scale,
+        "width_min_pixels": width_min_pixels, "width_max_pixels": width_max_pixels,
+        "auto_highlight": auto_highlight, "highlight_color": highlight_color
+    }
+    if tooltip_html and pickable: layer_config["tooltip"] = {"html": tooltip_html}
+    return pdk.Layer("PathLayer", **layer_config) 
