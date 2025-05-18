@@ -6,13 +6,13 @@ def update_map_view_to_project_bounds(project_map_bounds):
     if not project_map_bounds or "coordinates" not in project_map_bounds or \
        not project_map_bounds["coordinates"] or not project_map_bounds["coordinates"][0]:
         st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
+            longitude=8.5417, latitude=47.3769, zoom=11, pitch=0, bearing=0, transition_duration=1000
         )
         return
     bounds_coords_list = project_map_bounds["coordinates"][0]
     if not bounds_coords_list or len(bounds_coords_list) < 3:
         st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
+            longitude=8.5417, latitude=47.3769, zoom=11, pitch=0, bearing=0, transition_duration=1000
         )
         return
     try:
@@ -38,12 +38,21 @@ def update_map_view_to_project_bounds(project_map_bounds):
             elif max_diff < 0.2: zoom = 12
             elif max_diff < 0.5: zoom = 11
             else: zoom = 10
+        # Slightly zoom in for better detail
+        zoom = min(zoom + 1, 20)
+
+        # Horizontal shift (15% of bounding box width) so content appears left of overlay
+        lon_shift = (max_lon - min_lon) * 0.15 if max_lon != min_lon else 0.002
+        center_lon -= lon_shift
         st.session_state.map_view_state = pdk.ViewState(
-            longitude=center_lon, latitude=center_lat, zoom=zoom, pitch=50, bearing=0, transition_duration=1000
+            longitude=center_lon, latitude=center_lat, zoom=zoom, pitch=0, bearing=0, transition_duration=1000
         )
     except (TypeError, ValueError, IndexError) as e:
+        # Ensure also fallback gets slight zoom and shift
+        zoom = 12
+        center_lon = 8.5417 - 0.002
         st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
+            longitude=center_lon, latitude=47.3769, zoom=zoom, pitch=0, bearing=0, transition_duration=1000
         )
 
 def create_geojson_feature(geometry, properties=None):

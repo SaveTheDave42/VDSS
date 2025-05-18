@@ -121,11 +121,26 @@
       "type": "Polygon",
       "coordinates": [
         [
-          [8.490479161596255, 47.39888122783006],
-          [8.490479161596255, 47.388086979119095],
-          [8.513305685595213, 47.388086979119095],
-          [8.513305685595213, 47.39888122783006],
-          [8.490479161596255, 47.39888122783006]
+          [
+            8.490479161596255,
+            47.39888122783006
+          ],
+          [
+            8.490479161596255,
+            47.388086979119095
+          ],
+          [
+            8.513305685595213,
+            47.388086979119095
+          ],
+          [
+            8.513305685595213,
+            47.39888122783006
+          ],
+          [
+            8.490479161596255,
+            47.39888122783006
+          ]
         ]
       ]
     },
@@ -173,7 +188,237 @@
         "display_name": "Z093 - Hardturmstrasse (Bernoullihäuser) (auswärts)"
       }
     ],
-    "delivery_days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"],
-    "delivery_hours": {"start": "07:00", "end": "17:00"}
+    "delivery_days": [
+      "Montag",
+      "Dienstag",
+      "Mittwoch",
+      "Donnerstag",
+      "Freitag"
+    ],
+    "delivery_hours": {
+      "start": "07:00",
+      "end": "17:00"
+    }
+  },
+  {
+    "name": "Hardturm",
+    "polygon": {
+      "coordinates": [
+        [
+          [
+            8.504835677160457,
+            47.39383827956664
+          ],
+          [
+            8.502950598460984,
+            47.39277209637507
+          ],
+          [
+            8.503193834422063,
+            47.392537450845765
+          ],
+          [
+            8.505668760327836,
+            47.39182115803189
+          ],
+          [
+            8.50697615361915,
+            47.3926362490906
+          ],
+          [
+            8.505382958073284,
+            47.39368185249512
+          ],
+          [
+            8.504835677160457,
+            47.39383827956664
+          ]
+        ]
+      ],
+      "type": "Polygon"
+    },
+    "waiting_areas": [
+      {
+        "coordinates": [
+          [
+            [
+              8.503187578619361,
+              47.39365252259802
+            ],
+            [
+              8.502413920792236,
+              47.39314550154489
+            ],
+            [
+              8.502693754481157,
+              47.3929504921571
+            ],
+            [
+              8.503541485948318,
+              47.39353551815526
+            ],
+            [
+              8.503187578619361,
+              47.39365252259802
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    ],
+    "access_routes": [
+      {
+        "coordinates": [
+          [
+            8.494922651093447,
+            47.393317933269856
+          ],
+          [
+            8.500428790432608,
+            47.39346279644511
+          ],
+          [
+            8.501827958873832,
+            47.39368566209157
+          ],
+          [
+            8.503597495431876,
+            47.39382495264195
+          ],
+          [
+            8.50525180635401,
+            47.393886240367436
+          ],
+          [
+            8.505712708900148,
+            47.39366337556922
+          ],
+          [
+            8.506568774438364,
+            47.39304063688988
+          ],
+          [
+            8.507023205627235,
+            47.39268265372857
+          ],
+          [
+            8.50695082666482,
+            47.3925323063724
+          ],
+          [
+            8.505886463237772,
+            47.391918389339736
+          ],
+          [
+            8.505644589159402,
+            47.39201748959138
+          ]
+        ],
+        "type": "LineString"
+      }
+    ],
+    "map_bounds": {
+      "coordinates": [
+        [
+          [
+            8.495220725501724,
+            47.398998354095255
+          ],
+          [
+            8.495220725501724,
+            47.398996675676926
+          ],
+          [
+            8.49523802513363,
+            47.398996675676926
+          ],
+          [
+            8.49523802513363,
+            47.398998354095255
+          ],
+          [
+            8.495220725501724,
+            47.398998354095255
+          ]
+        ]
+      ],
+      "type": "Polygon"
+    },
+    "simulation_start_time": "06:00",
+    "simulation_end_time": "18:00",
+    "simulation_interval": "1h",
+    "primary_counter": {
+      "id": "Z076",
+      "name": "Pfingstweidstrasse (Sportweg)",
+      "direction": "einwärts",
+      "profile_id": "Z076_einwärts",
+      "display_name": "Z076 - Pfingstweidstrasse (Sportweg) (einwärts)",
+      "coordinates": [
+        47.39204825997651,
+        8.503654097423942
+      ]
+    },
+    "selected_counters": [
+      {
+        "id": "Z076",
+        "name": "Pfingstweidstrasse (Sportweg)",
+        "direction": "einwärts",
+        "profile_id": "Z076_einwärts",
+        "display_name": "Z076 - Pfingstweidstrasse (Sportweg) (einwärts)",
+        "coordinates": [
+          47.39204825997651,
+          8.503654097423942
+        ]
+      },
+      {
+        "id": "Z076",
+        "name": "Pfingstweidstrasse (Sportweg)",
+        "direction": "auswärts",
+        "profile_id": "Z076_auswärts",
+        "display_name": "Z076 - Pfingstweidstrasse (Sportweg) (auswärts)",
+        "coordinates": [
+          47.39167313281813,
+          8.505315600321229
+        ]
+      },
+      {
+        "id": "Z093",
+        "name": "Hardturmstrasse (Bernoullihäuser)",
+        "direction": "einwärts",
+        "profile_id": "Z093_einwärts",
+        "display_name": "Z093 - Hardturmstrasse (Bernoullihäuser) (einwärts)",
+        "coordinates": [
+          47.39374337783941,
+          8.508940105690792
+        ]
+      },
+      {
+        "id": "Z093",
+        "name": "Hardturmstrasse (Bernoullihäuser)",
+        "direction": "auswärts",
+        "profile_id": "Z093_auswärts",
+        "display_name": "Z093 - Hardturmstrasse (Bernoullihäuser) (auswärts)",
+        "coordinates": [
+          47.39379154655607,
+          8.508303780652897
+        ]
+      }
+    ],
+    "delivery_days": [
+      "Montag",
+      "Dienstag",
+      "Mittwoch",
+      "Donnerstag",
+      "Freitag"
+    ],
+    "delivery_hours": {
+      "start": "07:00",
+      "end": "17:00"
+    },
+    "id": "442b8ab6-e800-4dfa-9925-34d64dfb9dab",
+    "file_name": "Material_Lieferungen.csv",
+    "file_path": "data/projects/Hardturm/Material_Lieferungen.csv",
+    "created_at": "2025-05-18 17:54:50.632809",
+    "updated_at": null
   }
 ]

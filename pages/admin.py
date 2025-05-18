@@ -9,6 +9,7 @@ from datetime import datetime, date
 import pydeck as pdk # Add PyDeck if specific types from it are needed, though helpers are in streamlit_app
 import plotly.express as px # Keep for other plots if any, though not used in current admin view
 from io import BytesIO
+from utils.map_utils import update_map_view_to_project_bounds
 
 # Import helper functions from streamlit_app.py (conceptual import - they are globally available)
 # For a cleaner structure later, these could be in a utils.py file and imported explicitly.
@@ -16,51 +17,7 @@ from io import BytesIO
 
 API_URL = "http://localhost:8000"
 
-# --- PyDeck Map Helper Functions (Copied for direct use) ---
-def update_map_view_to_project_bounds(project_map_bounds):
-    '''Helper function to update st.session_state.map_view_state to fit project_map_bounds.'''
-    if not project_map_bounds or "coordinates" not in project_map_bounds or \
-       not project_map_bounds["coordinates"] or not project_map_bounds["coordinates"][0]:
-        st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
-        )
-        return
-    bounds_coords_list = project_map_bounds["coordinates"][0]
-    if not bounds_coords_list or len(bounds_coords_list) < 3:
-        st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
-        )
-        return
-    try:
-        min_lon = min(p[0] for p in bounds_coords_list)
-        max_lon = max(p[0] for p in bounds_coords_list)
-        min_lat = min(p[1] for p in bounds_coords_list)
-        max_lat = max(p[1] for p in bounds_coords_list)
-        if min_lat == max_lat or min_lon == max_lon:
-            center_lon = (min_lon + max_lon) / 2
-            center_lat = (min_lat + max_lat) / 2
-            zoom = 15
-        else:
-            center_lon = (min_lon + max_lon) / 2
-            center_lat = (min_lat + max_lat) / 2
-            lon_diff = abs(max_lon - min_lon)
-            lat_diff = abs(max_lat - min_lat)
-            max_diff = max(lon_diff, lat_diff)
-            if max_diff == 0: zoom = 15
-            elif max_diff < 0.01: zoom = 16
-            elif max_diff < 0.02: zoom = 15
-            elif max_diff < 0.05: zoom = 14
-            elif max_diff < 0.1: zoom = 13
-            elif max_diff < 0.2: zoom = 12
-            elif max_diff < 0.5: zoom = 11
-            else: zoom = 10
-        st.session_state.map_view_state = pdk.ViewState(
-            longitude=center_lon, latitude=center_lat, zoom=zoom, pitch=50, bearing=0, transition_duration=1000
-        )
-    except (TypeError, ValueError, IndexError) as e:
-        st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
-        )
+
 
 def create_geojson_feature(geometry, properties=None):
     '''Wraps a GeoJSON geometry into a GeoJSON Feature structure.'''
@@ -144,9 +101,8 @@ def show_admin_panel(project):
     # Update map view to project bounds - only once per project load on this page
     admin_view_key = f"admin_view_set_{project.get('id')}"
     if admin_view_key not in st.session_state:
-        # Use utility function from streamlit_app.py
-        import streamlit_app
-        streamlit_app.update_map_view_to_project_bounds(project.get("map_bounds"))
+        # Direkt den Helfer nutzen, um einen zirkulären Import zu verhindern
+        update_map_view_to_project_bounds(project.get("map_bounds"))
         st.session_state[admin_view_key] = True
 
     # Prepare layers for PyDeck map
@@ -216,7 +172,43 @@ def show_admin_panel(project):
     # Update map layers in session state
     st.session_state.map_layers = admin_map_layers
     
-    # Create tabs for different admin functions
+    # Create tabs for different admin functions with improved styling
+    st.markdown("""
+    <style>
+    /* Improve tab styling and visibility */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 10px 10px 0 10px;
+        border-radius: 4px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        padding: 8px 16px;
+        border-radius: 4px 4px 0px 0px;
+        margin-right: 4px;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        font-weight: 600;
+    }
+    
+    /* Fix tab panel content visibility */
+    .stTabs [data-baseweb="tab-panel"] {
+        color: white;
+        padding-top: 20px;
+    }
+    
+    /* Improve text area readability */
+    .stTextArea textarea {
+        background-color: rgba(25, 30, 45, 0.8);
+        color: #f1f1f1;
+        font-family: monospace;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     tab1, tab2, tab3 = st.tabs([
         "Edit Project", 
         "Update Excel", 
@@ -230,24 +222,32 @@ def show_admin_panel(project):
         st.subheader("Edit Geometries")
         st.markdown("The project geometries are displayed on the main map. To edit them, use the text areas below. After updating, the map will refresh.")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("<h6 style='color: white;'>Construction Site Polygon:</h6>", unsafe_allow_html=True)
-            polygon_json_initial = json.dumps(project.get("polygon", {}), indent=2)
-            polygon_json = st.text_area("GeoJSON for Construction Site", value=polygon_json_initial, height=150, key=f"poly_json_{project['id']}")
-            
-            st.markdown("<h6 style='color: white;'>Waiting Areas:</h6>", unsafe_allow_html=True)
-            waiting_areas_initial = json.dumps(project.get("waiting_areas", []), indent=2)
-            waiting_areas_json = st.text_area("GeoJSON for Waiting Areas", value=waiting_areas_initial, height=150, key=f"wait_json_{project['id']}")
+        # Use a different approach for the text areas with more space
+        st.markdown("<div style='display: flex; flex-wrap: wrap; gap: 20px;'>", unsafe_allow_html=True)
         
-        with col2:
-            st.markdown("<h6 style='color: white;'>Access Routes:</h6>", unsafe_allow_html=True)
-            access_routes_initial = json.dumps(project.get("access_routes", []), indent=2)
-            access_routes_json = st.text_area("GeoJSON for Access Routes", value=access_routes_initial, height=150, key=f"route_json_{project['id']}")
-            
-            st.markdown("<h6 style='color: white;'>Map Bounds:</h6>", unsafe_allow_html=True)
-            map_bounds_initial = json.dumps(project.get("map_bounds", {}), indent=2)
-            map_bounds_json = st.text_area("GeoJSON for Map Bounds", value=map_bounds_initial, height=150, key=f"bounds_json_{project['id']}")
+        # First column - Construction Site and Waiting Areas
+        st.markdown("<div style='flex: 1; min-width: 45%;'>", unsafe_allow_html=True)
+        st.markdown("<h6 style='color: white;'>Construction Site Polygon:</h6>", unsafe_allow_html=True)
+        polygon_json_initial = json.dumps(project.get("polygon", {}), indent=2)
+        polygon_json = st.text_area("GeoJSON for Construction Site", value=polygon_json_initial, height=200, key=f"poly_json_{project['id']}")
+        
+        st.markdown("<h6 style='color: white; margin-top: 20px;'>Waiting Areas:</h6>", unsafe_allow_html=True)
+        waiting_areas_initial = json.dumps(project.get("waiting_areas", []), indent=2)
+        waiting_areas_json = st.text_area("GeoJSON for Waiting Areas", value=waiting_areas_initial, height=200, key=f"wait_json_{project['id']}")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Second column - Access Routes and Map Bounds
+        st.markdown("<div style='flex: 1; min-width: 45%;'>", unsafe_allow_html=True)
+        st.markdown("<h6 style='color: white;'>Access Routes:</h6>", unsafe_allow_html=True)
+        access_routes_initial = json.dumps(project.get("access_routes", []), indent=2)
+        access_routes_json = st.text_area("GeoJSON for Access Routes", value=access_routes_initial, height=200, key=f"route_json_{project['id']}")
+        
+        st.markdown("<h6 style='color: white; margin-top: 20px;'>Map Bounds:</h6>", unsafe_allow_html=True)
+        map_bounds_initial = json.dumps(project.get("map_bounds", {}), indent=2)
+        map_bounds_json = st.text_area("GeoJSON for Map Bounds", value=map_bounds_initial, height=200, key=f"bounds_json_{project['id']}")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
         
         if st.button("Update Project Details & Geometries"): # Changed button label for clarity
             try:
@@ -340,10 +340,29 @@ def show_admin_panel(project):
         st.subheader("Simulation Settings")
         # ... (Simulation Settings content remains largely the same as it doesn't involve maps directly)
         st.info(f"Current simulation settings: Start: {project.get('simulation_start_time', '06:00')}, End: {project.get('simulation_end_time', '18:00')}, Interval: {project.get('simulation_interval', '1h')}")
-        col1, col2, col3 = st.columns(3)
-        with col1: start_time = st.text_input("Start Time (HH:MM)", value=project.get('simulation_start_time', '06:00'), key=f"sim_start_{project['id']}")
-        with col2: end_time = st.text_input("End Time (HH:MM)", value=project.get('simulation_end_time', '18:00'), key=f"sim_end_{project['id']}")
-        with col3: interval = st.selectbox("Interval", options=["15m", "30m", "1h", "2h", "4h"], index=2, key=f"sim_interval_{project['id']}") # Default to 1h
+        
+        # Use a better layout with more space between inputs
+        st.markdown("<div style='display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
+        
+        # Start Time
+        st.markdown("<div style='flex: 1; min-width: 30%;'>", unsafe_allow_html=True)
+        st.markdown("<label>Start Time (HH:MM)</label>", unsafe_allow_html=True)
+        start_time = st.text_input("", value=project.get('simulation_start_time', '06:00'), key=f"sim_start_{project['id']}", label_visibility="collapsed")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # End Time
+        st.markdown("<div style='flex: 1; min-width: 30%;'>", unsafe_allow_html=True)
+        st.markdown("<label>End Time (HH:MM)</label>", unsafe_allow_html=True)
+        end_time = st.text_input("", value=project.get('simulation_end_time', '18:00'), key=f"sim_end_{project['id']}", label_visibility="collapsed")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Interval
+        st.markdown("<div style='flex: 1; min-width: 30%;'>", unsafe_allow_html=True)
+        st.markdown("<label>Interval</label>", unsafe_allow_html=True)
+        interval = st.selectbox("", options=["15m", "30m", "1h", "2h", "4h"], index=2, key=f"sim_interval_{project['id']}", label_visibility="collapsed") # Default to 1h
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
         
         if st.button("Update Simulation Settings"):
             try:

@@ -2,6 +2,8 @@ from datetime import date, timedelta, time
 from datetime import datetime
 import streamlit as st
 import pydeck as pdk
+import json, textwrap
+import streamlit.components.v1 as components
 
 
 def parse_time_from_string(time_input, default_time):
@@ -114,4 +116,89 @@ def build_hourly_layer_cache(start_hour, end_hour, project, base_osm_segments, d
         h: build_segments_for_hour(h, project, base_osm_segments, date_str, get_traffic_data_func)
         for h in range(start_hour, end_hour + 1)
     }
+
+def render_hourly_traffic_component(hourly_segments: dict, initial_view_state: dict,
+                                    start_hour: int, end_hour: int,
+                                    key: str = "traffic_component", height: int = 700):
+    """Render an interactive deck.gl map with a JS slider & play-button.
+
+    Parameters
+    ----------
+    hourly_segments : dict[int, list]
+        Dict mapping hour -> PathLayer data (list of dicts with keys
+        path/color/width/etc.)
+    initial_view_state : dict
+        A deck.gl view-state dict (lon, lat, zoom, …).
+    start_hour, end_hour : int
+        Hour range shown in the slider.
+    key : str
+        Streamlit component key so multiple maps can coexist.
+    height : int
+        Pixel height of the HTML component.
+    """
+
+    html_str = f"""
+    <div id=\"map\" style=\"height:{height-50}px;border-radius:8px;\"></div>
+    <div style=\"margin-top:6px; display:flex; gap:8px; align-items:center;\">
+      <button id=\"playBtn\">Play</button>
+      <input type=\"range\" id=\"hourSlider\" min=\"{start_hour}\" max=\"{end_hour}\" value=\"{start_hour}\" step=\"1\" style=\"flex:1;\">
+      <span id=\"hourLabel\" style=\"width:55px;text-align:right;\">{start_hour:02d}:00</span>
+    </div>
+
+    <script src=\"https://unpkg.com/deck.gl@^8.9.0/dist.min.js\"></script>
+    <script>
+    const HOURS = {json.dumps(hourly_segments)};
+    const viewState = {json.dumps(initial_view_state)};
+
+    let currHour = {start_hour};
+    let playing  = false;
+
+    // Dynamic PathLayer
+    const trafficLayer = new deck.PathLayer({{
+      id: 'traffic',
+      data: HOURS[currHour],
+      getPath: d => d.path,
+      getWidth: d => d.width,
+      getColor: d => d.color,
+      pickable: true
+    }});
+
+    const deckgl = new deck.Deck({{
+      parent: document.getElementById('map'),
+      initialViewState: viewState,
+      controller: true,
+      layers: [trafficLayer]
+    }});
+
+    function setHour(h) {{
+      currHour = h;
+      document.getElementById('hourSlider').value = h;
+      document.getElementById('hourLabel').innerText = (h<10?'0':'')+h+':00';
+      trafficLayer.setProps({{data: HOURS[h]}});
+      deckgl.setProps({{layers:[trafficLayer]}});
+    }}
+
+    document.getElementById('hourSlider').oninput = e => setHour(+e.target.value);
+
+    let timer;
+    document.getElementById('playBtn').onclick = () => {{
+      playing = !playing;
+      document.getElementById('playBtn').innerText = playing ? 'Pause' : 'Play';
+      if (playing) {{
+        timer = setInterval(() => {{
+          setHour(currHour < {end_hour} ? currHour + 1 : {start_hour});
+        }}, 600);
+      }} else {{
+        clearInterval(timer);
+      }}
+    }};
+    </script>
+    """
+
+    # components.html (Streamlit <1.34) does not support the 'key' parameter.
+    try:
+        components.html(textwrap.dedent(html_str), height=height, key=key)  # type: ignore
+    except TypeError:
+        # Fallback for older Streamlit versions without 'key'
+        components.html(textwrap.dedent(html_str), height=height)
 

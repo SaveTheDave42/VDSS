@@ -3,62 +3,18 @@ import pandas as pd
 import json
 import requests
 import os
-from datetime import datetime, time
+from datetime import datetime, date, time
 import pydeck as pdk
 import numpy as np
 from io import BytesIO
 import math
 import holidays
+from utils.map_utils import update_map_view_to_project_bounds
 
 # Define API URL
 API_URL = "http://localhost:8000"
 
 # --- PyDeck Map Helper Functions (Copied from streamlit_app.py for direct use) ---
-def update_map_view_to_project_bounds(project_map_bounds):
-    '''Helper function to update st.session_state.map_view_state to fit project_map_bounds.'''
-    if not project_map_bounds or "coordinates" not in project_map_bounds or \
-       not project_map_bounds["coordinates"] or not project_map_bounds["coordinates"][0]:
-        st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
-        )
-        return
-    bounds_coords_list = project_map_bounds["coordinates"][0]
-    if not bounds_coords_list or len(bounds_coords_list) < 3: 
-        st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
-        )
-        return
-    try:
-        min_lon = min(p[0] for p in bounds_coords_list)
-        max_lon = max(p[0] for p in bounds_coords_list)
-        min_lat = min(p[1] for p in bounds_coords_list)
-        max_lat = max(p[1] for p in bounds_coords_list)
-        if min_lat == max_lat or min_lon == max_lon:
-            center_lon = (min_lon + max_lon) / 2
-            center_lat = (min_lat + max_lat) / 2
-            zoom = 15 
-        else:
-            center_lon = (min_lon + max_lon) / 2
-            center_lat = (min_lat + max_lat) / 2
-            lon_diff = abs(max_lon - min_lon)
-            lat_diff = abs(max_lat - min_lat)
-            max_diff = max(lon_diff, lat_diff)
-            if max_diff == 0: zoom = 15
-            elif max_diff < 0.01: zoom = 16
-            elif max_diff < 0.02: zoom = 15
-            elif max_diff < 0.05: zoom = 14
-            elif max_diff < 0.1: zoom = 13
-            elif max_diff < 0.2: zoom = 12
-            elif max_diff < 0.5: zoom = 11
-            else: zoom = 10
-        st.session_state.map_view_state = pdk.ViewState(
-            longitude=center_lon, latitude=center_lat, zoom=zoom, pitch=50, bearing=0, transition_duration=1000 
-        )
-    except (TypeError, ValueError, IndexError) as e:
-        st.session_state.map_view_state = pdk.ViewState(
-            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
-        )
-
 def create_geojson_feature(geometry, properties=None):
     '''Wraps a GeoJSON geometry into a GeoJSON Feature structure.'''
     if properties is None: properties = {}
@@ -96,7 +52,7 @@ def show_project_setup():
             latitude=47.3769, 
             longitude=8.5417, 
             zoom=10, 
-            pitch=30,
+            pitch=0,
             bearing=0,
             transition_duration=1000
         )
@@ -132,17 +88,54 @@ def show_project_setup():
         if st.session_state.get("project_name_valid", False):
             st.markdown("---")
             st.subheader("Delivery Days and Hours")
-            weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
-            selected_days = st.multiselect("Delivery Days", options=weekdays, default=st.session_state.get("delivery_days", weekdays[:-1]))
-            st.session_state.delivery_days = selected_days
-            
-            col1_time, col2_time = st.columns(2)
-            default_start_time = st.session_state.get("delivery_hours", {}).get("start", time(7,0))
-            default_end_time = st.session_state.get("delivery_hours", {}).get("end", time(17,0))
 
-            start_time = col1_time.time_input("Delivery from", value=default_start_time)
-            end_time = col2_time.time_input("Delivery until", value=default_end_time)
+            if not st.session_state.get("project_name_valid", False):
+                st.info("Project name not yet validated – you can still choose days/hours now; they will be saved once the name is confirmed.")
+
+            weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
+            selected_days = st.multiselect(
+                "Delivery Days",
+                options=weekdays,
+                default=st.session_state.get("delivery_days", weekdays[:-1]),
+                key="delivery_days_multiselect",
+            )
+            st.session_state.delivery_days = selected_days
+
+            # Time inputs with more space between them
+            st.markdown("<div style='display: flex; justify-content: space-between; margin-bottom: 10px;'>", unsafe_allow_html=True)
+            
+            # First column - Delivery from
+            st.markdown("<div style='width: 48%;'>", unsafe_allow_html=True)
+            st.markdown("<small><b>Delivery from</b></small>", unsafe_allow_html=True)
+            default_start_time = st.session_state.get("delivery_hours", {}).get("start", time(7, 0))
+            start_time = st.time_input(
+                label="",
+                value=default_start_time,
+                key="delivery_start_time_input",
+                label_visibility="collapsed",
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            # Second column - Delivery until  
+            st.markdown("<div style='width: 48%;'>", unsafe_allow_html=True)
+            st.markdown("<small><b>Delivery until</b></small>", unsafe_allow_html=True)
+            default_end_time = st.session_state.get("delivery_hours", {}).get("end", time(17, 0))
+            end_time = st.time_input(
+                label="",
+                value=default_end_time,
+                key="delivery_end_time_input",
+                label_visibility="collapsed",
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+
             st.session_state.delivery_hours = {"start": start_time, "end": end_time}
+
+            # Guard: only enable further sections/actions once project_name is validated
+            if not st.session_state.get("project_name_valid", False):
+                st.info("Validate project name above to proceed with counting stations and uploads.")
+                st.stop()
 
             st.markdown("---")
             st.subheader("Traffic Counting Stations")
@@ -276,16 +269,13 @@ def show_project_setup():
                     # Update map view to zoom to the construction site with animation
                     # Ensure the geometry is correctly passed for bounds calculation
                     if site_geojson_data.get("type") == "Polygon":
-                        import streamlit_app
-                        streamlit_app.update_map_view_to_project_bounds(site_geojson_data) 
+                        update_map_view_to_project_bounds(site_geojson_data) 
                     elif site_geojson_data.get("type") == "Feature" and site_geojson_data.get("geometry", {}).get("type") == "Polygon":
-                        import streamlit_app
-                        streamlit_app.update_map_view_to_project_bounds(site_geojson_data["geometry"]) 
+                        update_map_view_to_project_bounds(site_geojson_data["geometry"]) 
                     elif site_geojson_data.get("type") == "FeatureCollection" and site_geojson_data.get("features"): # Take first polygon feature
                         first_poly_feature = next((f for f in site_geojson_data["features"] if f.get("geometry",{}).get("type")=="Polygon"), None)
                         if first_poly_feature:
-                            import streamlit_app
-                            streamlit_app.update_map_view_to_project_bounds(first_poly_feature["geometry"]) 
+                            update_map_view_to_project_bounds(first_poly_feature["geometry"])
                     
                     # Add construction site layer to the map
                     site_feature = create_geojson_feature(site_geojson_data, {"name": "Construction Site Preview"})
@@ -444,23 +434,30 @@ def create_project_from_session_state():
                 # Make sure coordinates are in [lat, lon] if not already for backend
                 # Backend might expect specific format, ensure this matches
                 coords = counter.get('coordinates', [0,0]) # Default coords
+                id_clean = str(counter['id']).strip('"\'')
+                dir_clean = str(counter['direction']).strip('"\'')
                 selected_counters_clean.append({
-                    "id": str(counter['id']).strip('\"\''), "name": str(counter['name']).strip('\"\''),
-                    "direction": str(counter['direction']).strip('\"\''), 
-                    "profile_id": f"{str(counter['id']).strip('\"\'')}_{str(counter['direction']).strip('\"\'')}",
-                    "display_name": str(counter['display_name']).strip('\"\''),
-                    "coordinates": coords 
+                    "id": id_clean,
+                    "name": str(counter['name']).strip('"\''),
+                    "direction": dir_clean,
+                    "profile_id": f"{id_clean}_{dir_clean}",
+                    "display_name": str(counter['display_name']).strip('"\''),
+                    "coordinates": coords,
                 })
         
         primary_counter_clean = None
         if "primary_counter" in st.session_state and st.session_state.primary_counter:
             pc = st.session_state.primary_counter
             coords_pc = pc.get('coordinates', [0,0])
+            pc_id_clean = str(pc['id']).strip('"\'')
+            pc_dir_clean = str(pc['direction']).strip('"\'')
             primary_counter_clean = {
-                "id": str(pc['id']).strip('\"\''), "name": str(pc['name']).strip('\"\''),
-                "direction": str(pc['direction']).strip('\"\''),
-                "profile_id": f"{str(pc['id']).strip('\"\'')}_{str(pc['direction']).strip('\"\'')}",
-                "display_name": str(pc['display_name']).strip('\"\''), "coordinates": coords_pc
+                "id": pc_id_clean,
+                "name": str(pc['name']).strip('"\''),
+                "direction": pc_dir_clean,
+                "profile_id": f"{pc_id_clean}_{pc_dir_clean}",
+                "display_name": str(pc['display_name']).strip('"\''),
+                "coordinates": coords_pc,
             }
         
         delivery_hours_send = {}

@@ -1,6 +1,6 @@
 import streamlit as st
 import pydeck as pdk
-import json # For sample GeoJSON
+import json  # For sample GeoJSON
 import requests
 from utils.style_overrides import inject_widget_override
 from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
@@ -18,7 +18,7 @@ if "map_layers" not in st.session_state:
     st.session_state.map_layers = []
 if "map_view_state" not in st.session_state:
     st.session_state.map_view_state = pdk.ViewState(
-        latitude=47.3769, longitude=8.5417, zoom=11, pitch=30, bearing=0
+        latitude=47.3769, longitude=8.5417, zoom=11, pitch=0, bearing=0
     )
 if "widget_width_percent" not in st.session_state:
     st.session_state.widget_width_percent = 35  # Default widget width (35% of screen)
@@ -166,7 +166,7 @@ if not st.session_state.map_layers:
 # Initialize default view if not already set
 if "initial_view_set" not in st.session_state:
     st.session_state.map_view_state = pdk.ViewState(
-        longitude=8.55, latitude=47.40, zoom=10.5, pitch=30, bearing=0, transition_duration=1000
+        longitude=8.55, latitude=47.40, zoom=10.5, pitch=0, bearing=0, transition_duration=1000
     )
     st.session_state.initial_view_set = True
 
@@ -264,7 +264,7 @@ current_page = st.session_state.get("page", "dashboard")
 if current_page == "project_setup" or current_page == "admin":
     st.session_state.widget_width_percent = 50
 else:  # dashboard, resident_info, and others
-    st.session_state.widget_width_percent = 35
+    st.session_state.widget_width_percent = 25
 
 # Update CSS after changing widget width
 st.markdown(create_custom_css(), unsafe_allow_html=True)

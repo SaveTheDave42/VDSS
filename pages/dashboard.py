@@ -23,6 +23,7 @@ from utils.dashoboard_utils import (
     get_days_in_week,
     build_hourly_layer_cache,
 )
+from filelock import FileLock
 
 
 # Define API URL
@@ -52,7 +53,7 @@ DEFAULT_CAPACITY = 200
 # --- GLOBAL FEATURE FLAGS ---
 # Disable/enable the dashboard hour animation. When set to False the play/pause
 # button is removed and the dashboard will never trigger automatic reruns.
-ENABLE_ANIMATION = False
+ENABLE_ANIMATION = True
 
 
 
@@ -199,25 +200,16 @@ def show_dashboard(project):
             next_val = current_val + 1 if current_val < end_hour else start_hour
             st.session_state.animation_current_hour_value = next_val
 
-    # Hour selection slider inside a form (prevents jumpy behaviour)
-    with st.form(key="hour_form", clear_on_submit=False):
-        hour_val = st.slider(
-            "Hour",
-            min_value=start_hour,
-            max_value=end_hour,
-            value=st.session_state.get("sel_hour", start_hour),
-            step=1,
-            format="%d:00",
-        )
-        submitted = st.form_submit_button("Apply")
-
-    # Persist the chosen hour when user clicks "Apply"
-    if submitted:
-        st.session_state.sel_hour = hour_val
-
-    selected_hour_for_map = st.session_state.get("sel_hour", start_hour)
-    # Keep same value in animation_current_hour_value so that any other logic relying on it works.
-    st.session_state.animation_current_hour_value = selected_hour_for_map
+    # Smooth hour selection slider bound directly to session state.
+    selected_hour_for_map = st.slider(
+        "Hour",
+        min_value=start_hour,
+        max_value=end_hour,
+        value=st.session_state.get("sel_hour", start_hour),
+        step=1,
+        format="%d:00",
+        key="sel_hour",
+    )
 
     selected_date_str_for_map = selected_date_for_map.strftime("%Y-%m-%d")
 
@@ -371,6 +363,9 @@ def show_dashboard(project):
     """, unsafe_allow_html=True)
 
     # inject_widget_override() - wird jetzt zentral in streamlit_app.py aufgerufen
+
+    # If needed by other pages, they can still access the cached hourly layer dict via the cache key.
+    # We no longer push data for a custom JS component here to keep the original PyDeck map.
 
 def sanitize_counter(counter):
     """Remove extra quotes from counter ID and direction"""
@@ -579,35 +574,37 @@ def generate_osm_traffic_segments(project_map_bounds, project_id):
     cache_key_input = f"{project_id}_{bounds_coords_str}"
     cache_filename_base = hashlib.md5(cache_key_input.encode()).hexdigest()
     cache_file = os.path.join(CACHE_DIR, f"osm_segments_{cache_filename_base}.gpkg")
+    lock = FileLock(cache_file + ".lock")
 
-    if os.path.exists(cache_file):
-        if DEBUG_OSM: st.sidebar.info(f"OSM: Loading cached road segments from {cache_file}")
-        try:
-            segments_gdf = gpd.read_file(cache_file)
-            if segments_gdf.empty:
-                if DEBUG_OSM: st.sidebar.warning(f"OSM: Cache file {cache_file} is empty. Refetching.")
-                os.remove(cache_file) 
-            else:
-                processed_segments = []
-                for idx, row in segments_gdf.iterrows(): 
-                    coords_lon_lat = list(row.geometry.coords) if row.geometry and row.geometry.geom_type == 'LineString' else (list(row.geometry.geoms[0].coords) if row.geometry and row.geometry.geom_type == 'MultiLineString' and len(row.geometry.geoms) > 0 else [])
-                    highway_type = row.get('highway', 'unknown')
-                    highway_type = highway_type[0] if isinstance(highway_type, list) and highway_type else highway_type
-                    processed_segments.append({
-                        'segment_id': str(row.get('osmid', f"cached_seg_{idx}")),
-                        'coordinates': coords_lon_lat,
-                        'name': str(row.get('name', '')),
-                        'highway_type': highway_type,
-                        'length': float(row.get('length', 0.0)),
-                        'capacity': int(row.get('capacity', DEFAULT_CAPACITY))
-                    })
-                if DEBUG_OSM: st.sidebar.info(f"OSM: Loaded {len(processed_segments)} segments from cache.")
-                return processed_segments
-        except Exception as e:
-            if DEBUG_OSM: st.sidebar.error(f"OSM: Error loading GDF cache: {e}. Refetching.")
-            if os.path.exists(cache_file):
-                try: os.remove(cache_file); 
-                except: pass
+    with lock:
+        if os.path.exists(cache_file):
+            if DEBUG_OSM: st.sidebar.info(f"OSM: Loading cached road segments from {cache_file}")
+            try:
+                segments_gdf = gpd.read_file(cache_file)
+                if segments_gdf.empty:
+                    if DEBUG_OSM: st.sidebar.warning(f"OSM: Cache file {cache_file} is empty. Refetching.")
+                    os.remove(cache_file) 
+                else:
+                    processed_segments = []
+                    for idx, row in segments_gdf.iterrows(): 
+                        coords_lon_lat = list(row.geometry.coords) if row.geometry and row.geometry.geom_type == 'LineString' else (list(row.geometry.geoms[0].coords) if row.geometry and row.geometry.geom_type == 'MultiLineString' and len(row.geometry.geoms) > 0 else [])
+                        highway_type = row.get('highway', 'unknown')
+                        highway_type = highway_type[0] if isinstance(highway_type, list) and highway_type else highway_type
+                        processed_segments.append({
+                            'segment_id': str(row.get('osmid', f"cached_seg_{idx}")),
+                            'coordinates': coords_lon_lat,
+                            'name': str(row.get('name', '')),
+                            'highway_type': highway_type,
+                            'length': float(row.get('length', 0.0)),
+                            'capacity': int(row.get('capacity', DEFAULT_CAPACITY))
+                        })
+                    if DEBUG_OSM: st.sidebar.info(f"OSM: Loaded {len(processed_segments)} segments from cache.")
+                    return processed_segments
+            except Exception as e:
+                if DEBUG_OSM: st.sidebar.error(f"OSM: Error loading GDF cache: {e}. Refetching.")
+                if os.path.exists(cache_file):
+                    try: os.remove(cache_file); 
+                    except: pass
     if DEBUG_OSM: st.sidebar.info("OSM: No valid cache. Fetching network...")
     try:
         shapely_poly_coords = project_map_bounds['coordinates'][0]
@@ -641,7 +638,10 @@ def generate_osm_traffic_segments(project_map_bounds, project_id):
         else: segments_gdf['osmid'] = segments_gdf['osmid'].apply(lambda x: x[0] if isinstance(x, list) and x else x).fillna(pd.Series([f"gen_seg_fill_{i}" for i in range(len(segments_gdf))]))
         if 'length' in segments_gdf: segments_gdf['length'] = segments_gdf['length'].astype(float)
         if 'highway' in segments_gdf: segments_gdf['highway'] = segments_gdf['highway'].apply(lambda x: x[0] if isinstance(x,list) and x else str(x) if pd.notnull(x) else 'unknown')
-        if not segments_gdf.empty: segments_gdf.to_file(cache_file, driver="GPKG")
+        if not segments_gdf.empty:
+            # write cache atomically within lock
+            with lock:
+                segments_gdf.to_file(cache_file, driver="GPKG")
         else: return []
         processed_segments = []
         for _, row in segments_gdf.iterrows():
