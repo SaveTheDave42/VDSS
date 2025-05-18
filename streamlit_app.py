@@ -67,13 +67,55 @@ def create_custom_css():
     widget_width = st.session_state.widget_width_percent
     return f"""
     <style>
-        /* Make first column (map) span the whole width and height */
+        /* ---- Global ------------------------------------------------ */
+        body {{
+            background-color: #FFFFFF !important;
+            color: #212529;
+        }}
+
+        /* Override inline white headings inside widget panel */
+        div[data-testid='column']:nth-of-type(2) h1,
+        div[data-testid='column']:nth-of-type(2) h2,
+        div[data-testid='column']:nth-of-type(2) h3,
+        div[data-testid='column']:nth-of-type(2) h4,
+        div[data-testid='column']:nth-of-type(2) h5,
+        div[data-testid='column']:nth-of-type(2) h6 {{
+            color: #0F05A0 !important;
+        }}
+
+        /* ---- Map column ------------------------------------------- */
         div[data-testid='column']:nth-of-type(1) {{
             width: 100% !important;
             height: 100vh !important;
         }}
 
-        /* Float second column (controls & charts) on the right */
+        /* ---- Sidebar ---------------------------------------------- */
+        section[data-testid='stSidebar'] > div:first-child {{
+            background-color: #FFFFFF !important;
+            color: #0F05A0;
+        }}
+
+        /* Sidebar text colour */
+        section[data-testid='stSidebar'] * {{
+            color: #0F05A0 !important;
+        }}
+
+        /* Sidebar buttons */
+        section[data-testid='stSidebar'] .stButton button {{
+            background-color: #FFFFFF !important;
+            color: #0F05A0 !important;
+            border: 1px solid #0F05A0 !important;
+        }}
+
+        /* Sidebar selectbox / dropdown */
+        section[data-testid='stSidebar'] .stSelectbox div[role='combobox'] {{
+            background-color: #FFFFFF !important;
+            color: #0F05A0 !important;
+            border: 0px solid #CED4DA !important;
+        }}
+
+
+        /* ---- Floating widget panel -------------------------------- */
         div[data-testid='column']:nth-of-type(2) {{
             position: fixed !important;
             top: 70px;
@@ -81,11 +123,11 @@ def create_custom_css():
             width: {widget_width}% !important;
             max-height: 85vh;
             overflow-y: auto;
-            background: rgba(45, 55, 70, 0.97);
+            background: rgba(246, 247, 250, 0.97);
             padding: 20px 16px 12px 16px;
             border-radius: 10px;
             z-index: 1000;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.16);
         }}
 
         /* Make ALL map elements correctly fill the column in height */
@@ -127,12 +169,68 @@ def create_custom_css():
             max-width: 100% !important;
         }}
         
-        /* Style for Plotly charts within the widget */
+        /* ---- Plotly charts --------------------------------------- */
         .js-plotly-plot {{
             background-color: transparent !important;
         }}
         .plotly .bg {{
             fill: transparent !important;
+        }}
+
+        /* Widget dropdowns (selectbox) */
+        div[data-testid='column']:nth-of-type(2) .stSelectbox div[role='combobox'] {{
+            background-color: #FFFFFF !important;
+            color: #0F05A0 !important;
+            text-color: #0F05A0 !important;
+            border: 0px solid #CED4DA !important;
+        }}
+
+        /* Ensure inner elements of the combobox inherit blue text */
+        div[data-testid='column']:nth-of-type(2) .stSelectbox div[role='combobox'] * {{
+            color: #0F05A0 !important;
+        }}
+
+        /* Dropdown Menu (Popover List) */
+        div[data-baseweb="popover"] ul[role="listbox"] li {{
+            background-color: #FFFFFF !important;
+            color: #0F05A0 !important;
+        }}
+
+        div[data-baseweb="popover"] ul[role="listbox"] li:hover {{
+            background-color: #E7EDFF !important; /* Hellblau für Hover */
+        }}
+
+        html, .stApp {{
+            background-color: #FFFFFF !important;
+        }}
+
+        header[data-testid='stHeader'] {{
+            background-color: #FFFFFF !important;
+        }}
+
+        footer {{
+            background-color: #FFFFFF !important;
+        }}
+
+        /* Force all internal parts of Streamlit selectboxes to white */
+        .stSelectbox div, .stSelectbox input {{
+            background-color: #FFFFFF !important;
+        }}
+
+        /* Widget Dropdown Labels */
+        div[data-testid='column']:nth-of-type(2) label[data-testid='stWidgetLabel'] {{
+            background-color: transparent !important;
+            color: #0F05A0 !important;
+        }}
+
+        div[data-testid='column']:nth-of-type(2) label[data-testid='stWidgetLabel'] * {{
+            background-color: transparent !important;
+            color: #0F05A0 !important;
+        }}
+
+        /* Value text inside BaseWeb Select (higher specificity) */
+        div[data-testid='column']:nth-of-type(2) .stSelectbox div[data-baseweb='select'] .st-cb {{
+            color: #0F05A0 !important;
         }}
     </style>
     """

@@ -347,19 +347,19 @@ def show_admin_panel(project):
         # Start Time
         st.markdown("<div style='flex: 1; min-width: 30%;'>", unsafe_allow_html=True)
         st.markdown("<label>Start Time (HH:MM)</label>", unsafe_allow_html=True)
-        start_time = st.text_input("", value=project.get('simulation_start_time', '06:00'), key=f"sim_start_{project['id']}", label_visibility="collapsed")
+        start_time = st.text_input("starttime", value=project.get('simulation_start_time', '06:00'), key=f"sim_start_{project['id']}", label_visibility="collapsed")
         st.markdown("</div>", unsafe_allow_html=True)
         
         # End Time
         st.markdown("<div style='flex: 1; min-width: 30%;'>", unsafe_allow_html=True)
         st.markdown("<label>End Time (HH:MM)</label>", unsafe_allow_html=True)
-        end_time = st.text_input("", value=project.get('simulation_end_time', '18:00'), key=f"sim_end_{project['id']}", label_visibility="collapsed")
+        end_time = st.text_input("endtime", value=project.get('simulation_end_time', '18:00'), key=f"sim_end_{project['id']}", label_visibility="collapsed")
         st.markdown("</div>", unsafe_allow_html=True)
         
         # Interval
         st.markdown("<div style='flex: 1; min-width: 30%;'>", unsafe_allow_html=True)
         st.markdown("<label>Interval</label>", unsafe_allow_html=True)
-        interval = st.selectbox("", options=["15m", "30m", "1h", "2h", "4h"], index=2, key=f"sim_interval_{project['id']}", label_visibility="collapsed") # Default to 1h
+        interval = st.selectbox("selectbox", options=["15m", "30m", "1h", "2h", "4h"], index=2, key=f"sim_interval_{project['id']}", label_visibility="collapsed") # Default to 1h
         st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown("</div>", unsafe_allow_html=True)

@@ -10,17 +10,17 @@ def inject_widget_override():
         /* Enhanced styles for metric components */
         div[data-testid="stMetricValue"] {
             font-size: 1.4rem;
-            color: #ffffff;
+            color: #0F05A0; /* Zürich-Blau */
         }
         
         div[data-testid="stMetricLabel"] {
             font-size: 0.9rem;
-            color: #d1d9e6;
+            color: #495057; /* dunkles Grau */
         }
         
         /* General text coloring for dark background */
         .streamlit-expanderHeader, .streamlit-expanderContent {
-            color: white;
+            color: #212529; /* Grundtextfarbe */
         }
         
         /* Button styling */
@@ -28,6 +28,15 @@ def inject_widget_override():
             border-radius: 4px;
             padding: 0.25rem 1rem;
             font-weight: 600;
+            background-color: #0F05A0;
+            color: #FFFFFF;
+            border: none;
+        }
+        
+        /* Ensure value text inside selectboxes is Zurich blue */
+        .stSelectbox div[data-baseweb='select'] .st-cb,
+        .stSelectbox div[data-baseweb='select'] .st-cb * {
+            color: #0F05A0 !important;
         }
         
         /* Style main tab elements to better fit the dark panel */
@@ -41,7 +50,8 @@ def inject_widget_override():
         }
         
         .stTabs [aria-selected="true"] {
-            background-color: rgba(255, 255, 255, 0.1) !important;
+            background-color: #0F05A0 !important;
+            color: #FFFFFF !important;
             font-weight: 600;
         }
         
@@ -53,21 +63,22 @@ def inject_widget_override():
         /* Slider color adjustments */
         .stSlider [data-baseweb="slider"] {
             margin-top: 10px;
+            color: #0F05A0;
         }
         
         /* Form styling */
         [data-testid="stForm"] {
-            border-color: rgba(255, 255, 255, 0.1);
+            border-color: #E7EDFF;
             border-radius: 8px;
             padding: 1rem;
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: #F6F7FA;
         }
         
         /* Expander styling */
         .streamlit-expanderHeader {
             font-weight: 600;
-            color: white;
-            background-color: rgba(255, 255, 255, 0.05);
+            color: #0F05A0;
+            background-color: rgba(15, 5, 160, 0.05);
             border-radius: 4px;
         }
     </style>

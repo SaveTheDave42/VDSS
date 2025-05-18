@@ -224,7 +224,7 @@ def show_dashboard(project):
         avg_cong_display = 'Low' if avg_cong < 0.3 else 'Medium' if avg_cong < 0.7 else 'High'
     
     # Display metrics with clear labels
-    st.markdown("<h3 style='text-align: left; color: white; margin-top: 15px;'>Key Metrics</h3>", unsafe_allow_html=True)
+    """st.markdown("<h3 style='text-align: left; color: white; margin-top: 15px;'>Key Metrics</h3>", unsafe_allow_html=True)
     
     # Total Traffic
     st.metric("Total Traffic", current_traffic_data["stats"]["total_traffic"] if current_traffic_data else "N/A")
@@ -235,8 +235,7 @@ def show_dashboard(project):
     # Congestion
     st.metric("Congestion", avg_cong_display)
     
-    st.markdown("<hr>", unsafe_allow_html=True)
-
+    st.markdown("<hr>", unsafe_allow_html=True)"""
     # Daily Traffic Volume (title removed)
     dates_ts = days_in_week if days_in_week else [selected_week_dict["start_date"] + timedelta(days=i) for i in range(7)]
     
@@ -251,15 +250,17 @@ def show_dashboard(project):
     else: # Provide zeros or placeholder if no segments
         daily_totals_ts = [0] * len(dates_ts)
 
-    fig_daily = go.Figure(data=[go.Bar(x=[d.strftime("%a, %d.%m") for d in dates_ts], y=daily_totals_ts, name="Total Daily Traffic", marker_color="#1f77b4")])
+    fig_daily = go.Figure(data=[go.Bar(x=[d.strftime("%a, %d.%m") for d in dates_ts], y=daily_totals_ts, name="Total Daily Traffic", marker_color="#0F05A0")])
     fig_daily.update_layout(
-        xaxis_title=None, 
-        yaxis_title="Total Vehicles", 
-        margin=dict(l=10,r=10,t=30,b=10), 
+        xaxis_title=None,
+        xaxis=dict(tickfont=dict(color='#0F05A0')),
+        yaxis_title="Total Vehicles",
+        yaxis=dict(tickfont=dict(color='#0F05A0'), titlefont=dict(color='#0F05A0')),
+        margin=dict(l=10, r=10, t=30, b=10),
         height=220,
-        paper_bgcolor='rgba(0,0,0,0)', 
+        paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
+        font=dict(color='#0F05A0')
     )
     st.plotly_chart(fig_daily, use_container_width=True)
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -283,12 +284,12 @@ def show_dashboard(project):
         hourly_deliveries_hr = [0] * len(hours_list_hr)
     
     fig_hourly = go.Figure()
-    fig_hourly.add_trace(go.Bar(x=hours_list_hr, y=hourly_traffic_hr, name="Traffic Volume", marker_color="#1f77b4", opacity=0.7))
+    fig_hourly.add_trace(go.Bar(x=hours_list_hr, y=hourly_traffic_hr, name="Traffic Volume", marker_color="#0F05A0", opacity=0.7))
     fig_hourly.add_trace(go.Scatter(x=hours_list_hr, y=hourly_congestion_hr, mode="lines+markers", name="Congestion", line=dict(color="#d62728"), yaxis="y2"))
     fig_hourly.add_trace(go.Scatter(x=hours_list_hr, y=hourly_deliveries_hr, mode="lines+markers", name="Deliveries", line=dict(color="#2ca02c", dash="dot"), marker=dict(size=7), yaxis="y3"))
     fig_hourly.update_layout(
         xaxis=dict(title="Hour of Selected Day"),
-        yaxis=dict(title="Traffic Volume", titlefont=dict(color="#1f77b4"), tickfont=dict(color="#1f77b4"), side="left"),
+        yaxis=dict(title="Traffic Volume", titlefont=dict(color="#0F05A0"), tickfont=dict(color="#0F05A0"), side="left"),
         yaxis2=dict(title="Congestion", titlefont=dict(color="#d62728"), tickfont=dict(color="#d62728"), anchor="x", overlaying="y", side="right", range=[0, 1]),
         yaxis3=dict(title="Deliveries", titlefont=dict(color="#2ca02c"), tickfont=dict(color="#2ca02c"), anchor="free", overlaying="y", side="right", position=0.85, showgrid=False),
         legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5),
@@ -296,7 +297,7 @@ def show_dashboard(project):
         height=280,
         paper_bgcolor='rgba(0,0,0,0)', 
         plot_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
+        font_color='#0F05A0'
     )
     st.plotly_chart(fig_hourly, use_container_width=True)
 
