@@ -4,53 +4,217 @@ import json
 import requests
 import os
 from datetime import datetime, date
-import folium
-from streamlit_folium import folium_static
-import plotly.express as px
+# import folium # Remove Folium
+# from streamlit_folium import folium_static # Remove streamlit_folium_static
+import pydeck as pdk # Add PyDeck if specific types from it are needed, though helpers are in streamlit_app
+import plotly.express as px # Keep for other plots if any, though not used in current admin view
 from io import BytesIO
 
-# Define API URL
+# Import helper functions from streamlit_app.py (conceptual import - they are globally available)
+# For a cleaner structure later, these could be in a utils.py file and imported explicitly.
+# from streamlit_app import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer
+
 API_URL = "http://localhost:8000"
+
+# --- PyDeck Map Helper Functions (Copied for direct use) ---
+def update_map_view_to_project_bounds(project_map_bounds):
+    '''Helper function to update st.session_state.map_view_state to fit project_map_bounds.'''
+    if not project_map_bounds or "coordinates" not in project_map_bounds or \
+       not project_map_bounds["coordinates"] or not project_map_bounds["coordinates"][0]:
+        st.session_state.map_view_state = pdk.ViewState(
+            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
+        )
+        return
+    bounds_coords_list = project_map_bounds["coordinates"][0]
+    if not bounds_coords_list or len(bounds_coords_list) < 3:
+        st.session_state.map_view_state = pdk.ViewState(
+            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
+        )
+        return
+    try:
+        min_lon = min(p[0] for p in bounds_coords_list)
+        max_lon = max(p[0] for p in bounds_coords_list)
+        min_lat = min(p[1] for p in bounds_coords_list)
+        max_lat = max(p[1] for p in bounds_coords_list)
+        if min_lat == max_lat or min_lon == max_lon:
+            center_lon = (min_lon + max_lon) / 2
+            center_lat = (min_lat + max_lat) / 2
+            zoom = 15
+        else:
+            center_lon = (min_lon + max_lon) / 2
+            center_lat = (min_lat + max_lat) / 2
+            lon_diff = abs(max_lon - min_lon)
+            lat_diff = abs(max_lat - min_lat)
+            max_diff = max(lon_diff, lat_diff)
+            if max_diff == 0: zoom = 15
+            elif max_diff < 0.01: zoom = 16
+            elif max_diff < 0.02: zoom = 15
+            elif max_diff < 0.05: zoom = 14
+            elif max_diff < 0.1: zoom = 13
+            elif max_diff < 0.2: zoom = 12
+            elif max_diff < 0.5: zoom = 11
+            else: zoom = 10
+        st.session_state.map_view_state = pdk.ViewState(
+            longitude=center_lon, latitude=center_lat, zoom=zoom, pitch=50, bearing=0, transition_duration=1000
+        )
+    except (TypeError, ValueError, IndexError) as e:
+        st.session_state.map_view_state = pdk.ViewState(
+            longitude=8.5417, latitude=47.3769, zoom=11, pitch=50, bearing=0, transition_duration=1000
+        )
+
+def create_geojson_feature(geometry, properties=None):
+    '''Wraps a GeoJSON geometry into a GeoJSON Feature structure.'''
+    if properties is None: properties = {}
+    return {"type": "Feature", "geometry": geometry, "properties": properties}
+
+def create_pydeck_geojson_layer(
+    data, layer_id, fill_color=[255, 255, 255, 100], line_color=[0, 0, 0, 200],
+    line_width_min_pixels=1, get_line_width=10, opacity=0.5, stroked=True, filled=True,
+    extruded=False, wireframe=True, pickable=False, tooltip_html=None, auto_highlight=True,
+    highlight_color=[0, 0, 128, 128]
+):
+    '''Creates a PyDeck GeoJsonLayer with specified parameters.'''
+    layer_config = {
+        "id": layer_id, "data": data, "opacity": opacity, "stroked": stroked, "filled": filled,
+        "extruded": extruded, "wireframe": wireframe, "get_fill_color": fill_color,
+        "get_line_color": line_color, "get_line_width": get_line_width,
+        "line_width_min_pixels": line_width_min_pixels, "pickable": pickable,
+        "auto_highlight": auto_highlight, "highlight_color": highlight_color
+    }
+    if tooltip_html and pickable: layer_config["tooltip"] = {"html": tooltip_html}
+    return pdk.Layer("GeoJsonLayer", **layer_config)
+# --- End PyDeck Map Helper Functions ---
+
+def geojson_to_feature_list(geojson_input, default_properties=None):
+    """Converts various GeoJSON input types to a list of GeoJSON Features."""
+    if default_properties is None:
+        default_properties = {}
+    
+    features = []
+    if not geojson_input: # Handle empty or None input
+        return []
+
+    if isinstance(geojson_input, dict):
+        if geojson_input.get("type") == "FeatureCollection":
+            features.extend(geojson_input.get("features", []))
+        elif geojson_input.get("type") == "Feature":
+            features.append(geojson_input)
+        elif geojson_input.get("type") in ["Polygon", "MultiPolygon", "LineString", "MultiLineString", "Point", "MultiPoint"]:
+            # It's a raw geometry, wrap it in a Feature
+            features.append(create_geojson_feature(geojson_input, default_properties))
+        else:
+            # Try to handle as a list of geometries if it's a dict with a list of coords (older format?)
+            if "coordinates" in geojson_input: # Heuristic for simple geometry dicts
+                 features.append(create_geojson_feature(geojson_input, default_properties))
+    elif isinstance(geojson_input, list):
+        # If it's a list, assume it's a list of Features or a list of Geometries
+        for item in geojson_input:
+            if isinstance(item, dict):
+                if item.get("type") == "Feature":
+                    features.append(item)
+                elif item.get("type") in ["Polygon", "MultiPolygon", "LineString", "MultiLineString", "Point", "MultiPoint"]:
+                    features.append(create_geojson_feature(item, default_properties))
+                elif "coordinates" in item: # Heuristic for simple geometry dicts in a list
+                    features.append(create_geojson_feature(item, default_properties))
+    return features
 
 def show_admin():
     """Main admin function to handle project selection and display admin panel"""
-    st.title("Admin Panel")
+    # Set widget width for admin
+    st.session_state.widget_width_percent = 50
     
-    # Refresh the projects list if needed
-    if "projects" not in st.session_state:
-        if not refresh_projects(): # Wenn Laden fehlschlägt, abbrechen
-            return
-    
-    # Add refresh button
-    if st.button("🔄 Refresh Projects"):
+    if "projects" not in st.session_state or not st.session_state.projects:
         if not refresh_projects():
+            st.markdown("<h2 style='text-align: center; color: white;'>Admin Panel</h2>", unsafe_allow_html=True)
+            st.warning("Could not load projects. Please ensure the backend is running and accessible.")
+            st.session_state.map_layers = [] # Clear map layers
             return
     
-    # Project selection logic is now primarily handled by streamlit_app.py in the sidebar.
-    # We just use the current_project from session_state here.
     if "current_project" in st.session_state and st.session_state.current_project is not None:
         selected_project = st.session_state.current_project
-        
-        # Transfer traffic data to session state if available in the project
-        # This ensures that if a project is selected via sidebar, its specific traffic data is loaded
-        if "counter_profiles" in selected_project:
-            st.session_state.counter_profiles = selected_project["counter_profiles"]
-            st.session_state.global_counter_profiles = selected_project["counter_profiles"]
-        if "selected_counters" in selected_project:
-            st.session_state.selected_counters = selected_project["selected_counters"]
-            st.session_state.global_selected_counters = selected_project["selected_counters"]
-        if "primary_counter" in selected_project:
-            st.session_state.primary_counter = selected_project["primary_counter"]
-            st.session_state.global_primary_counter = selected_project["primary_counter"]
-        
-        # Display project details panel
+        st.markdown(f"<h2 style='text-align: center; color: white;'>Admin: {selected_project['name']}</h2>", unsafe_allow_html=True)
         show_admin_panel(selected_project)
     else:
+        st.markdown("<h2 style='text-align: center; color: white;'>Admin Panel</h2>", unsafe_allow_html=True)
         st.info("Please select a project from the sidebar or create a new one in the Project Setup page.")
+        st.session_state.map_layers = [] # Clear map if no project selected
 
 def show_admin_panel(project):
-    """Show the admin panel for managing an existing project"""
-    st.markdown(f"## Project: {project['name']}")
+    """Show the admin panel for managing an existing project, updating map layers."""
+    # Update map view to project bounds - only once per project load on this page
+    admin_view_key = f"admin_view_set_{project.get('id')}"
+    if admin_view_key not in st.session_state:
+        # Use utility function from streamlit_app.py
+        import streamlit_app
+        streamlit_app.update_map_view_to_project_bounds(project.get("map_bounds"))
+        st.session_state[admin_view_key] = True
+
+    # Prepare layers for PyDeck map
+    admin_map_layers = []
+
+    # 1. Construction Site Polygon
+    polygon_geojson = project.get("polygon")
+    if polygon_geojson and polygon_geojson.get("coordinates"):
+        site_features = geojson_to_feature_list(polygon_geojson, {"name": "Construction Site", "type": "Site"})
+        if site_features:
+            admin_map_layers.append(create_pydeck_geojson_layer(
+                data=site_features,
+                layer_id="admin_construction_site",
+                fill_color=[220, 53, 69, 160],  # Reddish
+                line_color=[220, 53, 69, 255],
+                line_width_min_pixels=2,
+                pickable=True,
+                tooltip_html="<b>{properties.name}</b><br/>Type: {properties.type}"
+            ))
+
+    # 2. Waiting Areas
+    waiting_areas_geojson = project.get("waiting_areas") # This might be a FeatureCollection or a list of Polygons
+    if waiting_areas_geojson:
+        waiting_features = geojson_to_feature_list(waiting_areas_geojson, {"name": "Waiting Area", "type": "Waiting"})
+        if waiting_features: # Ensure we have features to add
+            admin_map_layers.append(create_pydeck_geojson_layer(
+                data=waiting_features,
+                layer_id="admin_waiting_areas",
+                fill_color=[0, 123, 255, 160],  # Blueish
+                line_color=[0, 123, 255, 255],
+                pickable=True,
+                tooltip_html="<b>{properties.name}</b><br/>Type: {properties.type}"
+            ))
+
+    # 3. Access Routes
+    access_routes_geojson = project.get("access_routes") # Might be FeatureCollection or list of LineStrings
+    if access_routes_geojson:
+        route_features = geojson_to_feature_list(access_routes_geojson, {"name": "Access Route", "type": "Route"})
+        if route_features:
+            admin_map_layers.append(create_pydeck_geojson_layer(
+                data=route_features,
+                layer_id="admin_access_routes",
+                fill_color=[40, 167, 69, 160], # Greenish (used for line) - not filled for lines
+                line_color=[40, 167, 69, 255], 
+                stroked=True, # Ensure lines are drawn
+                filled=False, # Lines are not typically filled
+                line_width_min_pixels=3,
+                pickable=True,
+                tooltip_html="<b>{properties.name}</b><br/>Type: {properties.type}"
+            ))
+
+    # 4. Map Bounds (optional visualization)
+    map_bounds_geojson = project.get("map_bounds")
+    if map_bounds_geojson and map_bounds_geojson.get("coordinates"):
+        bounds_features = geojson_to_feature_list(map_bounds_geojson, {"name": "Map Display Bounds", "type": "Bounds"})
+        if bounds_features:
+            admin_map_layers.append(create_pydeck_geojson_layer(
+                data=bounds_features,
+                layer_id="admin_map_bounds",
+                fill_color=[108, 117, 125, 70],  # Greyish, very transparent
+                line_color=[108, 117, 125, 150],
+                line_width_min_pixels=2,
+                pickable=True,
+                tooltip_html="<b>{properties.name}</b><br/>Type: {properties.type}"
+            ))
+    
+    # Update map layers in session state
+    st.session_state.map_layers = admin_map_layers
     
     # Create tabs for different admin functions
     tab1, tab2, tab3 = st.tabs([
@@ -59,125 +223,56 @@ def show_admin_panel(project):
         "Simulation Settings"
     ])
     
-    # Tab 1: Edit Project (edit geometries, name, etc.)
     with tab1:
         st.subheader("Edit Project Details")
-        
-        # Edit project name
         new_name = st.text_input("Project Name", value=project["name"])
         
-        # Create a map centered on the project polygon
         st.subheader("Edit Geometries")
-        st.markdown("The map below shows the current project geometries. To edit them, use the text areas below.")
+        st.markdown("The project geometries are displayed on the main map. To edit them, use the text areas below. After updating, the map will refresh.")
         
-        # Extract coordinates for map centering
-        try:
-            polygon_coords = project["polygon"]["coordinates"][0]
-            centroid_lon = sum(p[0] for p in polygon_coords) / len(polygon_coords)
-            centroid_lat = sum(p[1] for p in polygon_coords) / len(polygon_coords)
-            
-            # Create map
-            m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=14)
-            
-            # Add construction site polygon
-            folium.GeoJson(
-                project["polygon"],
-                name="Construction Site",
-                style_function=lambda x: {"fillColor": "red", "color": "red", "weight": 2, "fillOpacity": 0.4}
-            ).add_to(m)
-            
-            # Add waiting areas
-            if project.get("waiting_areas"):
-                for i, area in enumerate(project["waiting_areas"]):
-                    folium.GeoJson(
-                        area,
-                        name=f"Waiting Area {i+1}",
-                        style_function=lambda x: {"fillColor": "blue", "color": "blue", "weight": 2, "fillOpacity": 0.4}
-                    ).add_to(m)
-            
-            # Add access routes
-            if project.get("access_routes"):
-                # Ensure access_routes is a list of GeoJSON features or a single GeoJSON feature
-                access_routes_data = project["access_routes"]
-                if isinstance(access_routes_data, dict): # Single feature
-                    access_routes_data = [access_routes_data]
-                
-                for i, route in enumerate(access_routes_data):
-                    folium.GeoJson(
-                        route,
-                        name=f"Access Route {i+1}",
-                        style_function=lambda x: {"color": "green", "weight": 4}
-                    ).add_to(m)
-            
-            # Add map bounds
-            if project.get("map_bounds"):
-                folium.GeoJson(
-                    project["map_bounds"],
-                    name="Map Bounds",
-                    style_function=lambda x: {"fillColor": "purple", "color": "purple", "weight": 2, "fillOpacity": 0.2}
-                ).add_to(m)
-            
-            # Add layer control
-            folium.LayerControl().add_to(m)
-            
-            # Display the map
-            folium_static(m)
-            
-        except KeyError as e:
-            st.error(f"Error displaying map: Missing key {str(e)} in project data. Please check the project.json file or re-create the project.")
-            st.json(project) # Display project data for debugging
-        except Exception as e:
-            st.error(f"Error displaying map: {str(e)}")
-            st.info("Please check that your GeoJSON data is correctly formatted.")
-            st.json(project) # Display project data for debugging
-        
-        # Edit geometries via JSON
         col1, col2 = st.columns(2)
-        
         with col1:
-            st.markdown("### Construction Site Polygon:")
-            polygon_json = st.text_area(
-                "GeoJSON for Construction Site", 
-                value=json.dumps(project["polygon"], indent=2),
-                height=200
-            )
+            st.markdown("<h6 style='color: white;'>Construction Site Polygon:</h6>", unsafe_allow_html=True)
+            polygon_json_initial = json.dumps(project.get("polygon", {}), indent=2)
+            polygon_json = st.text_area("GeoJSON for Construction Site", value=polygon_json_initial, height=150, key=f"poly_json_{project['id']}")
             
-            st.markdown("### Waiting Areas:")
-            waiting_areas_json = st.text_area(
-                "GeoJSON for Waiting Areas", 
-                value=json.dumps(project["waiting_areas"], indent=2),
-                height=200
-            )
+            st.markdown("<h6 style='color: white;'>Waiting Areas:</h6>", unsafe_allow_html=True)
+            waiting_areas_initial = json.dumps(project.get("waiting_areas", []), indent=2)
+            waiting_areas_json = st.text_area("GeoJSON for Waiting Areas", value=waiting_areas_initial, height=150, key=f"wait_json_{project['id']}")
         
         with col2:
-            st.markdown("### Access Routes:")
-            access_routes_json = st.text_area(
-                "GeoJSON for Access Routes", 
-                value=json.dumps(project["access_routes"], indent=2),
-                height=200
-            )
+            st.markdown("<h6 style='color: white;'>Access Routes:</h6>", unsafe_allow_html=True)
+            access_routes_initial = json.dumps(project.get("access_routes", []), indent=2)
+            access_routes_json = st.text_area("GeoJSON for Access Routes", value=access_routes_initial, height=150, key=f"route_json_{project['id']}")
             
-            st.markdown("### Map Bounds:")
-            map_bounds_json = st.text_area(
-                "GeoJSON for Map Bounds", 
-                value=json.dumps(project["map_bounds"], indent=2),
-                height=200
-            )
+            st.markdown("<h6 style='color: white;'>Map Bounds:</h6>", unsafe_allow_html=True)
+            map_bounds_initial = json.dumps(project.get("map_bounds", {}), indent=2)
+            map_bounds_json = st.text_area("GeoJSON for Map Bounds", value=map_bounds_initial, height=150, key=f"bounds_json_{project['id']}")
         
-        # Update button
-        if st.button("Update Project Details"):
+        if st.button("Update Project Details & Geometries"): # Changed button label for clarity
             try:
-                # Parse JSON inputs
-                try:
-                    polygon_data = json.loads(polygon_json)
-                    waiting_areas_data = json.loads(waiting_areas_json)
-                    access_routes_data = json.loads(access_routes_json)
-                    map_bounds_data = json.loads(map_bounds_json)
-                except json.JSONDecodeError as e:
-                    st.error(f"Invalid JSON format: {str(e)}")
-                    st.stop()
+                polygon_data = json.loads(polygon_json) if polygon_json.strip() else {}
+                waiting_areas_data = json.loads(waiting_areas_json) if waiting_areas_json.strip() else []
+                access_routes_data = json.loads(access_routes_json) if access_routes_json.strip() else []
+                map_bounds_data = json.loads(map_bounds_json) if map_bounds_json.strip() else {}
                 
-                # Prepare form data
+                # Validate GeoJSON structure (basic check)
+                # More thorough validation would involve jsonschema or similar
+                for geo_data, name in [
+                    (polygon_data, "Polygon"), (map_bounds_data, "Map Bounds")
+                ]:
+                    if geo_data and (not isinstance(geo_data, dict) or "type" not in geo_data or "coordinates" not in geo_data):
+                        st.error(f"Invalid GeoJSON structure for {name}. Ensure it has 'type' and 'coordinates'.")
+                        return # Stop processing
+                for geo_list, name in [
+                    (waiting_areas_data, "Waiting Areas"), (access_routes_data, "Access Routes")
+                ]:
+                    if geo_list and not isinstance(geo_list, list): # Should be list of Features/Geometries or FC
+                        # Could also be a single FeatureCollection
+                        if not (isinstance(geo_list, dict) and geo_list.get("type") == "FeatureCollection"):
+                            st.error(f"Invalid GeoJSON structure for {name}. Expected a list of geometries/features or a FeatureCollection.")
+                            return
+
                 form_data = {
                     "name": new_name,
                     "polygon": json.dumps(polygon_data),
@@ -186,216 +281,107 @@ def show_admin_panel(project):
                     "map_bounds": json.dumps(map_bounds_data)
                 }
                 
-                # Make the API request
-                response = requests.put(
-                    f"{API_URL}/api/projects/{project['id']}",
-                    data=form_data
-                )
+                response = requests.put(f"{API_URL}/api/projects/{project['id']}", data=form_data)
                 
                 if response.status_code == 200:
                     updated_project = response.json()
                     st.success("Project updated successfully!")
-                    
-                    # Update session state
                     st.session_state.current_project = updated_project
-                    
-                    # Refresh the projects list
-                    refresh_projects()
-                    
-                    # Force page refresh
-                    st.experimental_rerun()
+                    refresh_projects() # Update projects list in session state
+                     # Clear view set flag to re-trigger map centering if bounds changed
+                    if f"admin_view_set_{project['id']}" in st.session_state: 
+                        del st.session_state[f"admin_view_set_{project['id']}"]
+                    if f"dashboard_view_set_{project['id']}" in st.session_state: 
+                        del st.session_state[f"dashboard_view_set_{project['id']}"]
+                    if f"resident_info_view_set_{project['id']}" in st.session_state: 
+                        del st.session_state[f"resident_info_view_set_{project['id']}"]
+                    st.rerun()
                 else:
-                    st.error(f"Failed to update project: {response.status_code}")
-                    if response.content:
-                        st.error(response.content.decode())
-            
+                    st.error(f"Failed to update project: {response.status_code} - {response.text}")
+            except json.JSONDecodeError as e:
+                st.error(f"Invalid GeoJSON format in one of the text areas: {str(e)}")
             except Exception as e:
                 st.error(f"Error updating project: {str(e)}")
     
-    # Tab 2: Update Excel data
     with tab2:
         st.subheader("Update Excel Data")
-        
-        # Display current Excel info
-        st.info(f"Current Excel file: {project['file_name']}")
-        
-        # Upload new Excel file
-        uploaded_file = st.file_uploader("Choose a new Excel file", type=["xlsx"])
+        st.info(f"Current Excel file: {project.get('file_name', 'N/A')}")
+        uploaded_file = st.file_uploader("Choose a new Excel file", type=["xlsx"], key=f"excel_upload_{project['id']}")
         
         if uploaded_file is not None:
-            # Show preview of the data
             try:
-                st.subheader("Data Preview")
-                
-                # Read the Excel file
+                st.markdown("<h6 style='color: white;'>Data Preview (First 5 rows)</h6>", unsafe_allow_html=True)
                 deliveries_df = pd.read_excel(uploaded_file, sheet_name="Deliveries")
                 schedule_df = pd.read_excel(uploaded_file, sheet_name="Schedule")
                 vehicles_df = pd.read_excel(uploaded_file, sheet_name="Vehicles")
-                
-                # Reset the position to allow rereading
                 uploaded_file.seek(0)
+                with st.expander("Deliveries Preview"): st.dataframe(deliveries_df.head())
+                with st.expander("Schedule Preview"): st.dataframe(schedule_df.head())
+                with st.expander("Vehicles Preview"): st.dataframe(vehicles_df.head())
                 
-                # Show previews
-                with st.expander("Deliveries Preview"):
-                    st.dataframe(deliveries_df.head())
-                
-                with st.expander("Schedule Preview"):
-                    st.dataframe(schedule_df.head())
-                
-                with st.expander("Vehicles Preview"):
-                    st.dataframe(vehicles_df.head())
-                
-                # Update button
                 if st.button("Update Excel Data"):
                     try:
-                        # Prepare file data
-                        files = {
-                            "file": (uploaded_file.name, uploaded_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                        }
-                        
-                        # Make the API request
-                        response = requests.put(
-                            f"{API_URL}/api/projects/{project['id']}",
-                            files=files
-                        )
-                        
+                        files = {"file": (uploaded_file.name, uploaded_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+                        response = requests.put(f"{API_URL}/api/projects/{project['id']}", files=files)
                         if response.status_code == 200:
                             updated_project = response.json()
                             st.success("Excel data updated successfully!")
-                            
-                            # Update session state
                             st.session_state.current_project = updated_project
-                            
-                            # Refresh the projects list
                             refresh_projects()
-                            
-                            # Force page refresh
-                            st.experimental_rerun()
+                            st.rerun()
                         else:
-                            st.error(f"Failed to update Excel data: {response.status_code}")
-                            if response.content:
-                                st.error(response.content.decode())
-                    
+                            st.error(f"Failed to update Excel data: {response.status_code} - {response.text}")
                     except Exception as e:
                         st.error(f"Error updating Excel data: {str(e)}")
-                
             except Exception as e:
                 st.error(f"Error reading Excel file: {str(e)}")
     
-    # Tab 3: Simulation Settings
     with tab3:
         st.subheader("Simulation Settings")
-        
-        # Display current simulation settings
-        st.info(f"""
-        Current simulation settings:
-        - Start time: {project.get('simulation_start_time', '06:00')}
-        - End time: {project.get('simulation_end_time', '18:00')}
-        - Interval: {project.get('simulation_interval', '1h')}
-        """)
-        
-        # Edit simulation settings
+        # ... (Simulation Settings content remains largely the same as it doesn't involve maps directly)
+        st.info(f"Current simulation settings: Start: {project.get('simulation_start_time', '06:00')}, End: {project.get('simulation_end_time', '18:00')}, Interval: {project.get('simulation_interval', '1h')}")
         col1, col2, col3 = st.columns(3)
+        with col1: start_time = st.text_input("Start Time (HH:MM)", value=project.get('simulation_start_time', '06:00'), key=f"sim_start_{project['id']}")
+        with col2: end_time = st.text_input("End Time (HH:MM)", value=project.get('simulation_end_time', '18:00'), key=f"sim_end_{project['id']}")
+        with col3: interval = st.selectbox("Interval", options=["15m", "30m", "1h", "2h", "4h"], index=2, key=f"sim_interval_{project['id']}") # Default to 1h
         
-        with col1:
-            start_time = st.text_input("Start Time (HH:MM)", value=project.get('simulation_start_time', '06:00'))
-        
-        with col2:
-            end_time = st.text_input("End Time (HH:MM)", value=project.get('simulation_end_time', '18:00'))
-        
-        with col3:
-            interval = st.selectbox(
-                "Interval",
-                options=["15m", "30m", "1h", "2h", "4h"],
-                index=2  # Default to 1h
-            )
-        
-        # Update button
         if st.button("Update Simulation Settings"):
             try:
-                # Prepare form data
-                form_data = {
-                    "simulation_start_time": start_time,
-                    "simulation_end_time": end_time,
-                    "simulation_interval": interval
-                }
-                
-                # Make the API request
-                response = requests.put(
-                    f"{API_URL}/api/projects/{project['id']}",
-                    data=form_data
-                )
-                
+                form_data = {"simulation_start_time": start_time, "simulation_end_time": end_time, "simulation_interval": interval}
+                response = requests.put(f"{API_URL}/api/projects/{project['id']}", data=form_data)
                 if response.status_code == 200:
                     updated_project = response.json()
                     st.success("Simulation settings updated successfully!")
-                    
-                    # Update session state
                     st.session_state.current_project = updated_project
-                    
-                    # Refresh the projects list
                     refresh_projects()
-                    
-                    # Force page refresh
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
-                    st.error(f"Failed to update simulation settings: {response.status_code}")
-                    if response.content:
-                        st.error(response.content.decode())
-            
+                    st.error(f"Failed to update simulation settings: {response.status_code} - {response.text}")
             except Exception as e:
                 st.error(f"Error updating simulation settings: {str(e)}")
         
-        # Run simulation section
+        st.markdown("<hr style='margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
         st.subheader("Run Simulation")
-        
-        # Date range selection for simulation
         col1, col2 = st.columns(2)
+        with col1: start_date_sim = st.date_input("Start Date", value=date.today(), key=f"sim_date_start_{project['id']}")
+        with col2: end_date_sim = st.date_input("End Date", value=date.today() + pd.Timedelta(days=7), key=f"sim_date_end_{project['id']}")
         
-        with col1:
-            start_date = st.date_input("Start Date", value=date.today())
-        
-        with col2:
-            end_date = st.date_input("End Date", value=date.today() + pd.Timedelta(days=7))
-        
-        # Run simulation button
         if st.button("Run Simulation"):
             try:
-                # Prepare request data
-                simulation_request = {
-                    "project_id": project["id"],
-                    "start_date": start_date.isoformat(),
-                    "end_date": end_date.isoformat(),
-                    "time_interval": interval
-                }
-                
-                # Show a spinner while the simulation runs
+                simulation_request = {"project_id": project["id"], "start_date": start_date_sim.isoformat(), "end_date": end_date_sim.isoformat(), "time_interval": interval}
                 with st.spinner("Running simulation... This may take a few minutes."):
-                    # Make the API request
-                    response = requests.post(
-                        f"{API_URL}/api/simulation/run",
-                        json=simulation_request
-                    )
-                    
+                    response = requests.post(f"{API_URL}/api/simulation/run", json=simulation_request)
                     if response.status_code == 200:
                         simulation_result = response.json()
                         st.success("Simulation completed successfully!")
-                        
-                        # Show a summary of the results
                         st.subheader("Simulation Summary")
-                        st.json(simulation_result["stats"])
-                        
-                        # Provide a link to the dashboard
-                        st.info("View detailed results in the Dashboard page")
-                        
+                        st.json(simulation_result.get("stats", "No stats available."))
+                        st.info("View detailed results in the Dashboard page.")
                         if st.button("Go to Dashboard"):
                             st.session_state.page = "dashboard"
-                            st.experimental_rerun()
+                            st.rerun()
                     else:
-                        st.error(f"Failed to run simulation: {response.status_code}")
-                        if response.content:
-                            st.error(response.content.decode())
-            
+                        st.error(f"Failed to run simulation: {response.status_code} - {response.text}")
             except Exception as e:
                 st.error(f"Error running simulation: {str(e)}")
 
@@ -405,10 +391,13 @@ def refresh_projects():
         response = requests.get(f"{API_URL}/api/projects/")
         if response.status_code == 200:
             st.session_state.projects = response.json()
+            if not st.session_state.projects: st.session_state.projects = [] # Ensure it's a list
             return True
         else:
             st.error(f"Failed to refresh projects: {response.status_code}")
+            st.session_state.projects = []
             return False
     except Exception as e:
         st.error(f"Error connecting to API: {str(e)}")
+        st.session_state.projects = []
         return False 

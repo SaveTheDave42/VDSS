@@ -39,18 +39,17 @@ if __name__ == "__main__":
         # Run both in separate threads
         backend_thread = Thread(target=run_backend)
         frontend_thread = Thread(target=run_frontend)
-        browser_thread = Thread(target=open_browser)
+
         
         backend_thread.daemon = True
         frontend_thread.daemon = True
-        browser_thread.daemon = True
+
         
         print("Starting Construction Site Traffic Management System...")
         
         backend_thread.start()
         time.sleep(2)  # Give backend time to start before frontend
         frontend_thread.start()
-        browser_thread.start()
         
         try:
             # Keep the script running
