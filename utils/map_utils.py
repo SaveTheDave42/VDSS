@@ -42,7 +42,7 @@ def update_map_view_to_project_bounds(project_map_bounds):
         zoom = min(zoom + 1, 20)
 
         # Horizontal shift (15% of bounding box width) so content appears left of overlay
-        lon_shift = (max_lon - min_lon) * 0.15 if max_lon != min_lon else 0.002
+        lon_shift = (min_lon - max_lon) * 0.15 if max_lon != min_lon else 0.002
         center_lon -= lon_shift
         st.session_state.map_view_state = pdk.ViewState(
             longitude=center_lon, latitude=center_lat, zoom=zoom, pitch=0, bearing=0, transition_duration=1000
@@ -79,7 +79,7 @@ def create_pydeck_geojson_layer(
 
 def create_pydeck_path_layer(
     data, layer_id, get_path="path", get_color="color", get_width="width",
-    width_scale=1, width_min_pixels=2, width_max_pixels=10, pickable=False, tooltip_html=None,
+    width_scale=1, width_min_pixels=6, width_max_pixels=16, pickable=False, tooltip_html=None,
     auto_highlight=True, highlight_color=[0,0,128,128]
 ):
     '''Creates a PyDeck PathLayer.'''

@@ -178,8 +178,8 @@ def show_resident_info(project):
         polygon_layer = create_pydeck_geojson_layer(
             data=[polygon_feature], 
             layer_id="resident_project_polygon", 
-            fill_color=[220, 53, 69, 160], 
-            line_color=[220, 53, 69, 255],
+            fill_color=[70, 130, 180, 160], 
+            line_color=[70, 130, 180, 160],
             get_line_width=20,
             line_width_min_pixels=2,
             pickable=True, 

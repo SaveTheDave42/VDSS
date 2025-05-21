@@ -209,4 +209,37 @@ def apply_widget_panel_layout(widget_width_percent=35):
         max-width: 100% !important;
     }}
     </style>
+    """, unsafe_allow_html=True)
+
+def apply_kpi_styles():
+    """Apply reusable CSS styles for KPI flex containers (white background, blue border/text)."""
+    st.markdown("""
+    <style>
+    .kpi-wrapper {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .kpi-card {
+        flex: 1;
+        background: #FFFFFF;
+        border: 1px solid #0F05A0;
+        border-radius: 6px;
+        padding: 8px 4px 6px 4px;
+        text-align: center;
+    }
+    .kpi-card h4 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #0F05A0;
+        margin: 0;
+    }
+    .kpi-card p {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #0F05A0;
+        margin: 2px 0 0 0;
+    }
+    </style>
     """, unsafe_allow_html=True) 

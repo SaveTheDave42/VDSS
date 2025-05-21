@@ -116,8 +116,8 @@ def show_admin_panel(project):
             admin_map_layers.append(create_pydeck_geojson_layer(
                 data=site_features,
                 layer_id="admin_construction_site",
-                fill_color=[220, 53, 69, 160],  # Reddish
-                line_color=[220, 53, 69, 255],
+                fill_color=[70, 130, 180, 160],  # Reddish
+                line_color=[70, 130, 180, 160],
                 line_width_min_pixels=2,
                 pickable=True,
                 tooltip_html="<b>{properties.name}</b><br/>Type: {properties.type}"

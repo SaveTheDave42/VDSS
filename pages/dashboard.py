@@ -15,7 +15,7 @@ import osmnx as ox
 import geopandas as gpd
 from shapely.geometry import Polygon as ShapelyPolygon
 import hashlib
-from utils.custom_styles import apply_chart_styling
+from utils.custom_styles import apply_chart_styling, apply_kpi_styles
 from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
 from utils.dashoboard_utils import (
     parse_time_from_string,
@@ -226,19 +226,41 @@ def show_dashboard(project):
         avg_cong = current_traffic_data['stats']['average_congestion']
         avg_cong_display = 'Low' if avg_cong < 0.3 else 'Medium' if avg_cong < 0.7 else 'High'
     
-    # Display metrics with clear labels
-    """st.markdown("<h3 style='text-align: left; color: white; margin-top: 15px;'>Key Metrics</h3>", unsafe_allow_html=True)
-    
-    # Total Traffic
-    st.metric("Total Traffic", current_traffic_data["stats"]["total_traffic"] if current_traffic_data else "N/A")
-    
-    # Deliveries
-    st.metric("Deliveries", current_traffic_data["stats"]["deliveries_count"] if current_traffic_data else "N/A")
-    
-    # Congestion
-    st.metric("Congestion", avg_cong_display)
-    
-    st.markdown("<hr>", unsafe_allow_html=True)"""
+    # ---------------- Day Metrics -------------------------------------------------
+    # Calculate daily aggregates once to avoid repeated API calls later
+    total_deliveries_day = sum(
+        get_traffic_data(selected_date_str_for_map, hr, project, base_osm_segments)["stats"]["deliveries_count"]
+        for hr in range(start_hour, end_hour + 1)
+    )
+    total_traffic_day = sum(
+        get_traffic_data(selected_date_str_for_map, hr, project, base_osm_segments)["stats"]["total_traffic"]
+        for hr in range(start_hour, end_hour + 1)
+    )
+    avg_congestion_day = (
+        sum(
+            get_traffic_data(selected_date_str_for_map, hr, project, base_osm_segments)["stats"]["average_congestion"]
+            for hr in range(start_hour, end_hour + 1)
+        )
+        / (end_hour - start_hour + 1)
+    ) if end_hour >= start_hour else 0
+
+    delivery_share_pct = (total_deliveries_day / total_traffic_day * 100) if total_traffic_day else 0
+
+    # Apply KPI styles (reusable)
+    apply_kpi_styles()
+
+    # Render the three KPIs
+    kpi_html = f"""
+    <div class=\"kpi-wrapper\">
+        <div class=\"kpi-card\"><h4>Total Deliveries (Day)</h4><p>{total_deliveries_day}</p></div>
+        <div class=\"kpi-card\"><h4>Deliveries % of Traffic</h4><p>{delivery_share_pct:.1f}%</p></div>
+        <div class=\"kpi-card\"><h4>Avg. Congestion</h4><p>{avg_congestion_day:.2f}</p></div>
+    </div>
+    """
+
+    st.markdown(kpi_html, unsafe_allow_html=True)
+
+    st.markdown("<hr>", unsafe_allow_html=True)
     # Daily Traffic Volume (title removed)
     dates_ts = days_in_week if days_in_week else [selected_week_dict["start_date"] + timedelta(days=i) for i in range(7)]
     
@@ -314,8 +336,8 @@ def show_dashboard(project):
         polygon_layer = create_pydeck_geojson_layer(
             data=[polygon_feature], 
             layer_id="dashboard_project_polygon", 
-            fill_color=[220, 53, 69, 160], 
-            line_color=[220, 53, 69, 255],
+            fill_color=[70, 130, 180, 160], 
+            line_color=[70, 130, 180, 160],
             get_line_width=20,
             line_width_min_pixels=2,
             pickable=True, 
