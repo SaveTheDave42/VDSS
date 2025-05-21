@@ -10,6 +10,7 @@ from io import BytesIO
 import math
 import holidays
 from utils.map_utils import update_map_view_to_project_bounds
+from utils.custom_styles import apply_custom_styles, apply_chart_styling
 
 # Define API URL
 API_URL = "http://localhost:8000"
@@ -43,7 +44,11 @@ def show_project_setup():
     # Set widget width for project setup
     st.session_state.widget_width_percent = 50
     
-    st.markdown("<h2 style='text-align: center; color: white;'>Project Setup</h2>", unsafe_allow_html=True)
+    # Apply consistent styling
+    apply_custom_styles()
+    apply_chart_styling()
+    
+    st.markdown("<h2 style='text-align: center;'>Project Setup</h2>", unsafe_allow_html=True)
 
     # Set initial map state for project setup page - empty map
     if st.session_state.get('page') == "project_setup" and "project_setup_map_initialized" not in st.session_state:

@@ -2,7 +2,7 @@ import streamlit as st
 import pydeck as pdk
 import json  # For sample GeoJSON
 import requests
-from utils.style_overrides import inject_widget_override
+from utils.custom_styles import apply_custom_styles, apply_chart_styling, apply_map_layout, apply_widget_panel_layout
 from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
 
 # --- Imports für Seiten-Module ---
@@ -26,6 +26,11 @@ if "widget_width_percent" not in st.session_state:
 
 # Configure page
 st.set_page_config(layout="wide", page_title="Construction Site Traffic Management System")
+
+# Apply custom styles from our refactored module
+apply_custom_styles()
+apply_chart_styling()
+apply_map_layout()
 
 # <<< map_placeholder is the VERY FIRST element in the main body after set_page_config >>>
 map_placeholder = st.empty()
@@ -61,180 +66,6 @@ def create_pydeck_geojson_layer_local(data, layer_id, **kwargs):
     
     return create_pydeck_geojson_layer(data, layer_id, **new_kwargs)
 # --- End Helper Functions ---
-
-# --- Inject custom CSS with dynamic widget width ---
-def create_custom_css():
-    widget_width = st.session_state.widget_width_percent
-    return f"""
-    <style>
-        /* ---- Global ------------------------------------------------ */
-        body {{
-            background-color: #FFFFFF !important;
-            color: #212529;
-        }}
-
-        /* Override inline white headings inside widget panel */
-        div[data-testid='column']:nth-of-type(2) h1,
-        div[data-testid='column']:nth-of-type(2) h2,
-        div[data-testid='column']:nth-of-type(2) h3,
-        div[data-testid='column']:nth-of-type(2) h4,
-        div[data-testid='column']:nth-of-type(2) h5,
-        div[data-testid='column']:nth-of-type(2) h6 {{
-            color: #0F05A0 !important;
-        }}
-
-        /* ---- Map column ------------------------------------------- */
-        div[data-testid='column']:nth-of-type(1) {{
-            width: 100% !important;
-            height: 100vh !important;
-        }}
-
-        /* ---- Sidebar ---------------------------------------------- */
-        section[data-testid='stSidebar'] > div:first-child {{
-            background-color: #FFFFFF !important;
-            color: #0F05A0;
-        }}
-
-        /* Sidebar text colour */
-        section[data-testid='stSidebar'] * {{
-            color: #0F05A0 !important;
-        }}
-
-        /* Sidebar buttons */
-        section[data-testid='stSidebar'] .stButton button {{
-            background-color: #FFFFFF !important;
-            color: #0F05A0 !important;
-            border: 1px solid #0F05A0 !important;
-        }}
-
-        /* Sidebar selectbox / dropdown */
-        section[data-testid='stSidebar'] .stSelectbox div[role='combobox'] {{
-            background-color: #FFFFFF !important;
-            color: #0F05A0 !important;
-            border: 0px solid #CED4DA !important;
-        }}
-
-
-        /* ---- Floating widget panel -------------------------------- */
-        div[data-testid='column']:nth-of-type(2) {{
-            position: fixed !important;
-            top: 70px;
-            right: 20px;
-            width: {widget_width}% !important;
-            max-height: 85vh;
-            overflow-y: auto;
-            background: rgba(246, 247, 250, 0.97);
-            padding: 20px 16px 12px 16px;
-            border-radius: 10px;
-            z-index: 1000;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.16);
-        }}
-
-        /* Make ALL map elements correctly fill the column in height */
-        div[data-testid='stDeckGlJsonChart'] {{
-            height: calc(100vh - 80px) !important;
-            width: 100% !important;
-        }}
-        
-        /* Force all map container and canvas elements to full height */
-        #deckgl-wrapper {{
-            height: 100% !important;
-            min-height: calc(100vh - 80px) !important;
-        }}
-        
-        /* Ensure mapbox container takes full height */
-        #view-default-view {{
-            height: 100% !important;
-            min-height: calc(100vh - 80px) !important;
-        }}
-        
-        /* Force mapbox canvas to fill available space */
-        .mapboxgl-canvas-container, .mapboxgl-canvas, .mapboxgl-map {{
-            height: 100% !important;
-            min-height: calc(100vh - 80px) !important;
-        }}
-
-        /* Remove padding around map column */
-        div[data-testid='column']:nth-of-type(1) > div {{
-            padding: 0 !important;
-            margin: 0 !important;
-        }}
-
-        /* Remove padding/margins of the main Streamlit block-container and allow full width */
-        section.main > div.block-container {{
-            padding-top: 0 !important;
-            padding-right: 0 !important;
-            padding-left: 0 !important;
-            padding-bottom: 0 !important;
-            max-width: 100% !important;
-        }}
-        
-        /* ---- Plotly charts --------------------------------------- */
-        .js-plotly-plot {{
-            background-color: transparent !important;
-        }}
-        .plotly .bg {{
-            fill: transparent !important;
-        }}
-
-        /* Widget dropdowns (selectbox) */
-        div[data-testid='column']:nth-of-type(2) .stSelectbox div[role='combobox'] {{
-            background-color: #FFFFFF !important;
-            color: #0F05A0 !important;
-            text-color: #0F05A0 !important;
-            border: 0px solid #CED4DA !important;
-        }}
-
-        /* Ensure inner elements of the combobox inherit blue text */
-        div[data-testid='column']:nth-of-type(2) .stSelectbox div[role='combobox'] * {{
-            color: #0F05A0 !important;
-        }}
-
-        /* Dropdown Menu (Popover List) */
-        div[data-baseweb="popover"] ul[role="listbox"] li {{
-            background-color: #FFFFFF !important;
-            color: #0F05A0 !important;
-        }}
-
-        div[data-baseweb="popover"] ul[role="listbox"] li:hover {{
-            background-color: #E7EDFF !important; /* Hellblau für Hover */
-        }}
-
-        html, .stApp {{
-            background-color: #FFFFFF !important;
-        }}
-
-        header[data-testid='stHeader'] {{
-            background-color: #FFFFFF !important;
-        }}
-
-        footer {{
-            background-color: #FFFFFF !important;
-        }}
-
-        /* Force all internal parts of Streamlit selectboxes to white */
-        .stSelectbox div, .stSelectbox input {{
-            background-color: #FFFFFF !important;
-        }}
-
-        /* Widget Dropdown Labels */
-        div[data-testid='column']:nth-of-type(2) label[data-testid='stWidgetLabel'] {{
-            background-color: transparent !important;
-            color: #0F05A0 !important;
-        }}
-
-        div[data-testid='column']:nth-of-type(2) label[data-testid='stWidgetLabel'] * {{
-            background-color: transparent !important;
-            color: #0F05A0 !important;
-        }}
-
-        /* Value text inside BaseWeb Select (higher specificity) */
-        div[data-testid='column']:nth-of-type(2) .stSelectbox div[data-baseweb='select'] .st-cb {{
-            color: #0F05A0 !important;
-        }}
-    </style>
-    """
-st.markdown(create_custom_css(), unsafe_allow_html=True)
 
 # --- Define and Display a Sample GeoJSON Layer ---
 def load_sample_layer():
@@ -364,8 +195,8 @@ if current_page == "project_setup" or current_page == "admin":
 else:  # dashboard, resident_info, and others
     st.session_state.widget_width_percent = 25
 
-# Update CSS after changing widget width
-st.markdown(create_custom_css(), unsafe_allow_html=True)
+# Apply widget panel layout with the appropriate width
+apply_widget_panel_layout(st.session_state.widget_width_percent)
 
 # --- Widget Content Based on Current Page ---
 with col_widget:
@@ -493,7 +324,4 @@ if "projects" not in st.session_state:
     refresh_projects()
 
 # Create and initialize sidebar (now that projects are loaded)
-create_sidebar()
-
-# Additional utility for third-party code
-inject_widget_override() 
+create_sidebar() 

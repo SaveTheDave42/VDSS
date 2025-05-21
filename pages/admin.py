@@ -89,10 +89,10 @@ def show_admin():
     
     if "current_project" in st.session_state and st.session_state.current_project is not None:
         selected_project = st.session_state.current_project
-        st.markdown(f"<h2 style='text-align: center; color: white;'>Admin: {selected_project['name']}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center;'>Admin: {selected_project['name']}</h2>", unsafe_allow_html=True)
         show_admin_panel(selected_project)
     else:
-        st.markdown("<h2 style='text-align: center; color: white;'>Admin Panel</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>Admin Panel</h2>", unsafe_allow_html=True)
         st.info("Please select a project from the sidebar or create a new one in the Project Setup page.")
         st.session_state.map_layers = [] # Clear map if no project selected
 
@@ -172,43 +172,7 @@ def show_admin_panel(project):
     # Update map layers in session state
     st.session_state.map_layers = admin_map_layers
     
-    # Create tabs for different admin functions with improved styling
-    st.markdown("""
-    <style>
-    /* Improve tab styling and visibility */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: rgba(255, 255, 255, 0.05);
-        padding: 10px 10px 0 10px;
-        border-radius: 4px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        padding: 8px 16px;
-        border-radius: 4px 4px 0px 0px;
-        margin-right: 4px;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        font-weight: 600;
-    }
-    
-    /* Fix tab panel content visibility */
-    .stTabs [data-baseweb="tab-panel"] {
-        color: white;
-        padding-top: 20px;
-    }
-    
-    /* Improve text area readability */
-    .stTextArea textarea {
-        background-color: rgba(25, 30, 45, 0.8);
-        color: #f1f1f1;
-        font-family: monospace;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
+    # Create tabs for different admin functions
     tab1, tab2, tab3 = st.tabs([
         "Edit Project", 
         "Update Excel", 
@@ -227,22 +191,22 @@ def show_admin_panel(project):
         
         # First column - Construction Site and Waiting Areas
         st.markdown("<div style='flex: 1; min-width: 45%;'>", unsafe_allow_html=True)
-        st.markdown("<h6 style='color: white;'>Construction Site Polygon:</h6>", unsafe_allow_html=True)
+        st.markdown("<h6>Construction Site Polygon:</h6>", unsafe_allow_html=True)
         polygon_json_initial = json.dumps(project.get("polygon", {}), indent=2)
         polygon_json = st.text_area("GeoJSON for Construction Site", value=polygon_json_initial, height=200, key=f"poly_json_{project['id']}")
         
-        st.markdown("<h6 style='color: white; margin-top: 20px;'>Waiting Areas:</h6>", unsafe_allow_html=True)
+        st.markdown("<h6 style='margin-top: 20px;'>Waiting Areas:</h6>", unsafe_allow_html=True)
         waiting_areas_initial = json.dumps(project.get("waiting_areas", []), indent=2)
         waiting_areas_json = st.text_area("GeoJSON for Waiting Areas", value=waiting_areas_initial, height=200, key=f"wait_json_{project['id']}")
         st.markdown("</div>", unsafe_allow_html=True)
         
         # Second column - Access Routes and Map Bounds
         st.markdown("<div style='flex: 1; min-width: 45%;'>", unsafe_allow_html=True)
-        st.markdown("<h6 style='color: white;'>Access Routes:</h6>", unsafe_allow_html=True)
+        st.markdown("<h6>Access Routes:</h6>", unsafe_allow_html=True)
         access_routes_initial = json.dumps(project.get("access_routes", []), indent=2)
         access_routes_json = st.text_area("GeoJSON for Access Routes", value=access_routes_initial, height=200, key=f"route_json_{project['id']}")
         
-        st.markdown("<h6 style='color: white; margin-top: 20px;'>Map Bounds:</h6>", unsafe_allow_html=True)
+        st.markdown("<h6 style='margin-top: 20px;'>Map Bounds:</h6>", unsafe_allow_html=True)
         map_bounds_initial = json.dumps(project.get("map_bounds", {}), indent=2)
         map_bounds_json = st.text_area("GeoJSON for Map Bounds", value=map_bounds_initial, height=200, key=f"bounds_json_{project['id']}")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -310,7 +274,7 @@ def show_admin_panel(project):
         
         if uploaded_file is not None:
             try:
-                st.markdown("<h6 style='color: white;'>Data Preview (First 5 rows)</h6>", unsafe_allow_html=True)
+                st.markdown("<h6>Data Preview (First 5 rows)</h6>", unsafe_allow_html=True)
                 deliveries_df = pd.read_excel(uploaded_file, sheet_name="Deliveries")
                 schedule_df = pd.read_excel(uploaded_file, sheet_name="Schedule")
                 vehicles_df = pd.read_excel(uploaded_file, sheet_name="Vehicles")
@@ -379,7 +343,7 @@ def show_admin_panel(project):
             except Exception as e:
                 st.error(f"Error updating simulation settings: {str(e)}")
         
-        st.markdown("<hr style='margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin-top: 10px; margin-bottom: 10px;'>", unsafe_allow_html=True)
         st.subheader("Run Simulation")
         col1, col2 = st.columns(2)
         with col1: start_date_sim = st.date_input("Start Date", value=date.today(), key=f"sim_date_start_{project['id']}")

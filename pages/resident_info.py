@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 import numpy as np
 from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
 from utils.dashoboard_utils import build_segments_for_hour, build_hourly_layer_cache, render_hourly_traffic_component, get_week_options, get_days_in_week
+from utils.custom_styles import apply_chart_styling
 import streamlit.components.v1 as components
 import pages.dashboard as _dash
 
@@ -21,8 +22,11 @@ def show_resident_info(project):
     # Set widget width for resident info
     st.session_state.widget_width_percent = 35
     
-    st.markdown(f"<h2 style='text-align: center; color: white;'>Construction Site Traffic Information</h2>", unsafe_allow_html=True)
-    st.markdown(f"<h3 style='text-align: center; color: white;'>{project['name']}</h3>", unsafe_allow_html=True)
+    # Apply chart styling for this page
+    apply_chart_styling()
+    
+    st.markdown(f"<h2 style='text-align: center;'>Construction Site Traffic Information</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align: center;'>{project['name']}</h3>", unsafe_allow_html=True)
     
     # Center map view on project bounds
     view_key = f"resident_info_view_set_{project.get('id')}"
@@ -89,7 +93,7 @@ def show_resident_info(project):
     selected_date_str = selected_date_for_map.strftime("%Y-%m-%d")
     
     # 2. Traffic condition warning panel (Daily Traffic Conditions)
-    st.markdown("<h3 style='color: white;'>Daily Traffic Conditions</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>Daily Traffic Conditions</h3>", unsafe_allow_html=True)
     
     # ---- Obtain hourly traffic data via dashboard logic ----
     delivery_hours_cfg = project.get("delivery_hours", {})
@@ -225,14 +229,9 @@ def show_resident_info(project):
     
     st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
-    # --- Fine-tune panel & element spacing ----------------------------------
+    # --- Fine-tune just the necessary element spacing ----------------------------------
     st.markdown("""
     <style>
-        /* Revert background opacity to original */
-        div[data-testid='column']:nth-of-type(2) {
-            background: rgba(45, 55, 70, 0.97) !important;
-        }
-
         /* Push first metric row a bit downward so it doesn't hug the top edge */
         div[data-testid='stMetric']:first-of-type {
             margin-top: 12px !important;

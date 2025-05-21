@@ -15,7 +15,7 @@ import osmnx as ox
 import geopandas as gpd
 from shapely.geometry import Polygon as ShapelyPolygon
 import hashlib
-from utils.style_overrides import inject_widget_override
+from utils.custom_styles import apply_chart_styling
 from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
 from utils.dashoboard_utils import (
     parse_time_from_string,
@@ -62,7 +62,10 @@ def show_dashboard(project):
     # Set widget width for dashboard - now handled in streamlit_app.py
     # st.session_state.widget_width_percent = 35
     
-    st.markdown("<h2 style='text-align: center; color: white;'>Traffic Dashboard</h2>", unsafe_allow_html=True)
+    # Apply chart styling for this page
+    apply_chart_styling()
+    
+    st.markdown("<h2 style='text-align: center;'>Traffic Dashboard</h2>", unsafe_allow_html=True)
 
     # Session state checks and data loading
     if "selected_counters" not in st.session_state and "selected_counters" in project:
@@ -362,8 +365,6 @@ def show_dashboard(project):
         }
     </style>
     """, unsafe_allow_html=True)
-
-    # inject_widget_override() - wird jetzt zentral in streamlit_app.py aufgerufen
 
     # If needed by other pages, they can still access the cached hourly layer dict via the cache key.
     # We no longer push data for a custom JS component here to keep the original PyDeck map.
