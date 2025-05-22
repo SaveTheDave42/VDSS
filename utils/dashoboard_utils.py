@@ -37,6 +37,34 @@ def get_week_options():
         })
     return options
 
+def get_week_options_for_year(year: int):
+    """Generate ISO-week option dicts for a given calendar year.
+
+    Each option contains:
+        label  – e.g. "KW 23 | 03.06 – 09.06" (no year shown)
+        year   – the supplied year
+        week   – ISO week number (1-53)
+        start_date, end_date – Monday/Sunday dates of that week
+    """
+    options = []
+    # Iterate over all possible ISO weeks (max 53)
+    for week_num in range(1, 54):
+        try:
+            # Monday of the ISO week
+            start_of_week = date.fromisocalendar(year, week_num, 1)
+        except ValueError:
+            # Invalid week number for this year (e.g. week 53 in a 52-week year)
+            break
+        end_of_week = start_of_week + timedelta(days=6)
+        options.append({
+            "label": f"KW {week_num} | {start_of_week.strftime('%d.%m')} - {end_of_week.strftime('%d.%m')}",
+            "year": year,
+            "week": week_num,
+            "start_date": start_of_week,
+            "end_date": end_of_week,
+        })
+    return options
+
 def get_days_in_week(year, week_num, delivery_days_filter):
     """Gets all dates for a given ISO week number and year, filtered by delivery days."""
     # Map German weekday names to ISO weekday numbers (Monday=0, Sunday=6)

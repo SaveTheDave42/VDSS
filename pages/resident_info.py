@@ -8,7 +8,13 @@ import pydeck as pdk
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
+from utils.map_utils import (
+    update_map_view_to_project_bounds,
+    create_geojson_feature,
+    create_pydeck_geojson_layer,
+    create_pydeck_path_layer,
+    create_pydeck_access_route_layer,
+)
 from utils.dashoboard_utils import build_segments_for_hour, build_hourly_layer_cache, render_hourly_traffic_component, get_week_options, get_days_in_week
 from utils.custom_styles import apply_chart_styling
 import streamlit.components.v1 as components
@@ -81,15 +87,23 @@ def show_resident_info(project):
     # Default to today if it's in the list, otherwise first day of the week
     default_day_index = next((i for i, d in enumerate(days_in_week) if d == today), 0)
     
-    # Select day dropdown
-    selected_date_for_map = st.selectbox(
-        "Select Day", 
-        options=days_in_week, 
-        index=default_day_index,
-        format_func=lambda d: f"{d.strftime('%A, %d.%m.%Y')}", 
-        key="day_resident_ctrl"
-    ) if days_in_week else today
-    
+    # --- Unified Date Selector -------------------------------------------------
+    # Determine selectable range from project start/end dates (if provided)
+    min_date, max_date = date(2024, 9, 5), date(2025, 10, 30)
+    if "dates" in project:
+        if "start_date" in project["dates"]:
+            min_date = datetime.fromisoformat(project["dates"]["start_date"]).date()
+        if "end_date" in project["dates"]:
+            max_date = datetime.fromisoformat(project["dates"]["end_date"]).date()
+
+    selected_date_for_map = st.date_input(
+        "Date",
+        value=date.today(),
+        min_value=min_date,
+        max_value=max_date,
+        key="date_resident_ctrl",
+    )
+
     selected_date_str = selected_date_for_map.strftime("%Y-%m-%d")
     
     # 2. Traffic condition warning panel (Daily Traffic Conditions)
@@ -186,6 +200,15 @@ def show_resident_info(project):
             tooltip_html="<b>Construction Site</b><br/>{properties.name}"
         )
         layers_for_pydeck.append(polygon_layer)
+    
+    # 1b. Access Route Layer (violet, wider)
+    if project.get("access_routes"):
+        access_route_layer = create_pydeck_access_route_layer(
+            project["access_routes"],
+            layer_id="resident_access_route",
+        )
+        if access_route_layer:
+            layers_for_pydeck.append(access_route_layer)
     
     # 2. Traffic Segments Layer
     # Get the traffic data for the selected hour

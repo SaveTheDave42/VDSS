@@ -88,14 +88,14 @@ if 'Endtermin' in df_cleaned.columns:
     df_cleaned['Endtermin'] = df_cleaned['Endtermin'].apply(convert_date_format)
 
 # Nur Zeilen mit Material behalten
-if 'Material' in df_cleaned.columns:
+if 'Material' or 'Personen' in df_cleaned.columns:
     df_filtered = df_cleaned[df_cleaned['Material'].notna() & (df_cleaned['Material'] != '')]
 else:
     df_filtered = df_cleaned
     print("Warnung: Spalte 'Material' nicht gefunden!")
 
 # Nur relevante Spalten behalten
-relevant_columns = ['Einmalige_NR', 'Vorgangsname', 'Anfangstermin', 'Endtermin', 'Material', 'Geschoss']
+relevant_columns = ['Einmalige_NR', 'Vorgangsname', 'Anfangstermin', 'Endtermin', 'Material', 'Personen', 'Geschoss']
 available_columns = [col for col in relevant_columns if col in df_filtered.columns]
 
 if len(available_columns) < len(relevant_columns):

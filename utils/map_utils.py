@@ -90,4 +90,43 @@ def create_pydeck_path_layer(
         "auto_highlight": auto_highlight, "highlight_color": highlight_color
     }
     if tooltip_html and pickable: layer_config["tooltip"] = {"html": tooltip_html}
-    return pdk.Layer("PathLayer", **layer_config) 
+    return pdk.Layer("PathLayer", **layer_config)
+
+def create_pydeck_access_route_layer(access_routes, layer_id="access_route_layer", color=[148, 0, 211, 76], width_pixels=20):
+    """Create a PathLayer that highlights the construction site's access route.
+
+    Parameters
+    ----------
+    access_routes : list[dict]
+        The list of GeoJSON LineString objects (from project['access_routes']).
+    layer_id : str
+        Unique layer id for the PathLayer.
+    color : list[int]
+        RGBA colour for the path (default: violet with 30% opacity).
+    width_pixels : int
+        Constant width of the path in screen pixels (default: 20 pixels).
+    """
+    if not access_routes:
+        return None
+
+    # Build path data records compatible with create_pydeck_path_layer
+    paths_data = []
+    for idx, route in enumerate(access_routes):
+        if not route or route.get("type") != "LineString" or not route.get("coordinates"):
+            continue
+        paths_data.append({
+            "path": route["coordinates"],
+            "color": color,
+            "width": width_pixels
+        })
+
+    if not paths_data:
+        return None
+
+    return create_pydeck_path_layer(
+        data=paths_data,
+        layer_id=layer_id,
+        pickable=False,
+        width_min_pixels=width_pixels,
+        width_max_pixels=width_pixels
+    ) 

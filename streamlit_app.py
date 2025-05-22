@@ -193,7 +193,7 @@ current_page = st.session_state.get("page", "dashboard")
 if current_page == "project_setup" or current_page == "admin":
     st.session_state.widget_width_percent = 50
 else:  # dashboard, resident_info, and others
-    st.session_state.widget_width_percent = 25
+    st.session_state.widget_width_percent = 30
 
 # Apply widget panel layout with the appropriate width
 apply_widget_panel_layout(st.session_state.widget_width_percent)

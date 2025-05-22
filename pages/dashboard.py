@@ -13,17 +13,25 @@ import numpy as np
 import calendar # For week/weekday calculations
 import osmnx as ox
 import geopandas as gpd
-from shapely.geometry import Polygon as ShapelyPolygon
+from shapely.geometry import Polygon as ShapelyPolygon, LineString
 import hashlib
 from utils.custom_styles import apply_chart_styling, apply_kpi_styles
-from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
+from utils.map_utils import (
+    update_map_view_to_project_bounds,
+    create_geojson_feature,
+    create_pydeck_geojson_layer,
+    create_pydeck_path_layer,
+    create_pydeck_access_route_layer,
+)
 from utils.dashoboard_utils import (
     parse_time_from_string,
     get_week_options,
+    get_week_options_for_year,
     get_days_in_week,
     build_hourly_layer_cache,
 )
 from filelock import FileLock
+import re
 
 
 # Define API URL
@@ -56,17 +64,10 @@ DEFAULT_CAPACITY = 200
 ENABLE_ANIMATION = True
 
 
-
-def show_dashboard(project):
-    """Show the dashboard for visualizing traffic simulation results"""
-    # Set widget width for dashboard - now handled in streamlit_app.py
-    # st.session_state.widget_width_percent = 35
-    
-    # Apply chart styling for this page
-    apply_chart_styling()
-    
+def _render_traffic_tab(project):
+    """Render the traffic dashboard tab content"""
     st.markdown("<h2 style='text-align: center;'>Traffic Dashboard</h2>", unsafe_allow_html=True)
-
+    
     # Session state checks and data loading
     if "selected_counters" not in st.session_state and "selected_counters" in project:
         # Parse counter coordinates from project which might be loaded from JSON
@@ -158,30 +159,77 @@ def show_dashboard(project):
             update_map_view_to_project_bounds(project.get("map_bounds"))
         st.session_state[view_key] = True
 
-    # Controls
-    week_options = get_week_options()
-    today_cal = date.today().isocalendar()
-    default_week_index = next((i for i, option in enumerate(week_options) if option["year"] == today_cal[0] and option["week"] == today_cal[1]), len(week_options) // 2)
-    
+    # --- Unified Date Selector -------------------------------------------------
+    # Determine selectable range from project start/end dates (if provided)
+    min_date, max_date = date(2024, 9, 5), date(2026, 6, 30)
+    if "dates" in project:
+        if "start_date" in project["dates"]:
+            min_date = datetime.fromisoformat(project["dates"]["start_date"]).date()
+        if "end_date" in project["dates"]:
+            max_date = datetime.fromisoformat(project["dates"]["end_date"]).date()
+
+    selected_date_for_map = st.date_input(
+        "Date",
+        value=date.today(),
+        min_value=min_date,
+        max_value=max_date,
+        key="date_dashboard_ctrl",
+    )
+
+    # Ensure the chosen date is an allowed delivery day; otherwise, auto-adjust
+    delivery_days_names = project.get("delivery_days", ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"])
+    weekday_map_to_iso = {"Montag": 0, "Dienstag": 1, "Mittwoch": 2, "Donnerstag": 3, "Freitag": 4, "Samstag": 5, "Sonntag": 6}
+    allowed_weekdays = [weekday_map_to_iso[d] for d in delivery_days_names if d in weekday_map_to_iso]
+
+    if selected_date_for_map.weekday() not in allowed_weekdays:
+        # Try to move to the next allowed weekday (forward, then backward)
+        next_valid = None
+        for offset in range(1, 7):
+            cand = selected_date_for_map + timedelta(days=offset)
+            if cand.weekday() in allowed_weekdays:
+                next_valid = cand
+                break
+        if next_valid is None:
+            for offset in range(1, 7):
+                cand = selected_date_for_map - timedelta(days=offset)
+                if cand.weekday() in allowed_weekdays:
+                    next_valid = cand
+                    break
+        if next_valid:
+            st.info(
+                f"{selected_date_for_map.strftime('%A')} ist kein Liefertag. Stattdessen wird {next_valid.strftime('%A, %d.%m.%Y')} verwendet."
+            )
+            selected_date_for_map = next_valid
+
+    # Re-create week context so downstream logic and caching stay unchanged
+    week_year, week_num, _ = selected_date_for_map.isocalendar()
+    start_of_week = date.fromisocalendar(week_year, week_num, 1)
+    end_of_week = start_of_week + timedelta(days=6)
+
+    selected_week_dict = {
+        "year": week_year,
+        "week": week_num,
+        "start_date": start_of_week,
+        "end_date": end_of_week,
+        "label": f"KW {week_num} | {start_of_week.strftime('%d.%m')} - {end_of_week.strftime('%d.%m')}",
+    }
+
+    days_in_week = get_days_in_week(week_year, week_num, delivery_days_names)
+
+    # --- Cache management when week/year changes ---
     current_week_key = f"current_dashboard_week_{project.get('id', 'default')}"
-    if current_week_key not in st.session_state:
-        st.session_state[current_week_key] = None
-    
-    selected_week_dict = st.selectbox("Select Week", options=week_options, index=default_week_index, format_func=lambda x: x["label"], key="week_dashboard_ctrl")
-    
     selected_week_id = f"{selected_week_dict['year']}_{selected_week_dict['week']}"
-    if st.session_state[current_week_key] != selected_week_id:
+    if st.session_state.get(current_week_key) != selected_week_id:
         st.session_state[current_week_key] = selected_week_id
-        week_cache_key = f"traffic_data_week_{selected_week_dict['year']}_{selected_week_dict['week']}_{project.get('id', 'default')}"
+        week_cache_key = (
+            f"traffic_data_week_{selected_week_dict['year']}_{selected_week_dict['week']}_{project.get('id', 'default')}"
+        )
         if week_cache_key in st.session_state:
-            if DEBUG_OSM: st.write(f"OSM: Clearing old week cache {week_cache_key}")
+            if DEBUG_OSM:
+                st.write(f"OSM: Clearing old week cache {week_cache_key}")
             del st.session_state[week_cache_key]
         preload_traffic_data_for_week(selected_week_dict, project, base_osm_segments)
-    
-    delivery_days_names = project.get("delivery_days", ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"])
-    days_in_week = get_days_in_week(selected_week_dict["year"], selected_week_dict["week"], delivery_days_names)
-    selected_date_for_map = st.selectbox("Select Day", options=days_in_week, format_func=lambda d: f"{d.strftime('%A, %d.%m.%Y')}", key="day_dashboard_ctrl") if days_in_week else date.today()
-    
+
     delivery_hours = project.get("delivery_hours", {})
     start_hour_str = delivery_hours.get("start", "06:00")
     end_hour_str = delivery_hours.get("end", "18:00")
@@ -244,7 +292,23 @@ def show_dashboard(project):
         / (end_hour - start_hour + 1)
     ) if end_hour >= start_hour else 0
 
-    delivery_share_pct = (total_deliveries_day / total_traffic_day * 100) if total_traffic_day else 0
+    delivery_share_pct = (total_deliveries_day / total_traffic_day * 100 * 2) if total_traffic_day else 0
+
+    # --- Access OSM segments (segments that overlap with the access route) ---
+    access_osm_segments = _get_access_osm_segments(project, base_osm_segments)
+
+    # Use access_osm_segments instead of base_osm_segments for access route calculations
+    access_traffic_day = (
+        sum(get_traffic_data(selected_date_str_for_map, hr, project, access_osm_segments)["stats"]["access_traffic"]
+            for hr in range(start_hour, end_hour + 1)) / (end_hour - start_hour + 1)
+    ) if access_osm_segments else 0
+
+    construction_traffic_day = sum(
+        get_traffic_data(selected_date_str_for_map, hr, project, base_osm_segments)["stats"]["construction_traffic"]
+        for hr in range(start_hour, end_hour + 1)
+    ) if base_osm_segments else 0
+
+    construction_share_pct_day = (construction_traffic_day / access_traffic_day * 100) if access_traffic_day else 0
 
     # Apply KPI styles (reusable)
     apply_kpi_styles()
@@ -259,6 +323,16 @@ def show_dashboard(project):
     """
 
     st.markdown(kpi_html, unsafe_allow_html=True)
+
+    # ---- NEW KPI card row ----
+    additional_kpi_html = f"""
+    <div class=\"kpi-wrapper\">
+        <div class=\"kpi-card\"><h4>Access Traffic (Day)</h4><p>{access_traffic_day:.2f}</p></div>
+        <div class=\"kpi-card\"><h4>Construction Traffic</h4><p>{construction_traffic_day}</p></div>
+        <div class=\"kpi-card\"><h4>Construction Share</h4><p>{construction_share_pct_day:.1f}%</p></div>
+    </div>
+    """
+    st.markdown(additional_kpi_html, unsafe_allow_html=True)
 
     st.markdown("<hr>", unsafe_allow_html=True)
     # Daily Traffic Volume (title removed)
@@ -345,6 +419,15 @@ def show_dashboard(project):
         )
         layers_for_pydeck.append(polygon_layer)
 
+    # 1b. Access Route Layer (violet, wider)
+    if project.get("access_routes"):
+        access_route_layer = create_pydeck_access_route_layer(
+            project["access_routes"],
+            layer_id="dashboard_access_route",
+        )
+        if access_route_layer:
+            layers_for_pydeck.append(access_route_layer)
+
     # 2. Traffic Segments Layer (cached)
     # Build or retrieve cache for the selected date
     cache_key_hourly = f"hourly_layers_{selected_date_str_for_map}_{project.get('id')}"
@@ -384,6 +467,37 @@ def show_dashboard(project):
         /* Smaller metric value font */
         div[data-testid="stMetricValue"] {
             font-size: 1.3rem !important;
+        }
+
+        /* Style selectboxes to resemble KPI cards */
+        div[data-baseweb="select"] {
+            background: #F4F6FF !important;
+            padding: 6px 8px !important;
+            border-radius: 8px !important;
+            border: 1px solid #E1E4F2 !important;
+        }
+        /* Reduce label spacing */
+        label[data-testid="stSelectboxLabel"] {
+            margin-bottom: 2px !important;
+        }
+
+        /* --- Triple-select row (year / week / day) ---------------------------------- */
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            gap: 8px !important;
+            flex-wrap: nowrap !important; /* prevent line-break */
+        }
+        div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+            flex: 0 0 33% !important;  /* fixed one-third */
+            max-width: 33% !important;
+        }
+        /* ensure internal width 100% so select fills the card */
+        div[data-testid="stHorizontalBlock"] > div[data-testid="column"] > div {
+            width: 100% !important;
+        }
+        /* override BaseWeb select min-width so it can shrink */
+        div[data-baseweb="select"] {
+            min-width: 0 !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -715,6 +829,126 @@ def preload_traffic_data_for_week(selected_week_dict, project, base_osm_segments
     if DEBUG_OSM: st.sidebar.info(f"OSM: Week data preloaded and cached: {week_cache_key}")
     return week_data
 
+def load_csv_data(file_path):
+    """Load CSV data and print column names for debugging."""
+    try:
+        data_df = pd.read_csv(file_path)
+        # Strip spaces from column names
+        data_df.columns = data_df.columns.str.strip()
+        print("CSV Columns:", data_df.columns)  # Debugging line to print column names
+        return data_df
+    except Exception as e:
+        print(f"Error loading CSV: {e}")
+        return None
+
+def _load_construction_schedule(project):
+    """Load and cache the construction delivery schedule for a project as a DataFrame."""
+    cache_key = f"construction_schedule_{project.get('id', 'default')}"
+    if cache_key in st.session_state:
+        return st.session_state[cache_key]
+
+    schedule_df = None
+    # Prefer explicit file_path if provided
+    file_path = project.get("file_path")
+    if file_path and os.path.exists(file_path):
+        schedule_df = pd.read_csv(file_path)
+    else:
+        # Fallback: assemble from name + file_name (legacy fields)
+        proj_name = project.get("name", "")
+        file_name = project.get("file_name", "Material_Lieferungen.csv")
+        potential_path = os.path.join("data", "projects", proj_name, file_name)
+        if os.path.exists(potential_path):
+            schedule_df = pd.read_csv(potential_path)
+
+    if schedule_df is None:
+        schedule_df = pd.DataFrame()  # empty placeholder
+
+    # Tidy column names
+    schedule_df.columns = schedule_df.columns.str.strip()
+    st.session_state[cache_key] = schedule_df
+    return schedule_df
+
+def _preprocess_schedule_df(schedule_df):
+    """Ensure helper columns (_anfang_date, _anfang_hour) exist for fast filtering."""
+    if schedule_df.empty:
+        return schedule_df
+    if "_anfang_date" not in schedule_df.columns or "_anfang_hour" not in schedule_df.columns:
+        schedule_df["_anfang_date"] = schedule_df["Anfangstermin"].astype(str).str.split().str[0]
+        schedule_df["_anfang_hour"] = (
+            schedule_df["Anfangstermin"].astype(str)
+            .str.split()
+            .str[1]
+            .fillna("00:00")
+            .str.slice(0, 2)
+            .astype(int)
+        )
+    return schedule_df
+
+# Get daily deliveries (integer) according to 1 + ceil(material/10) rule
+def _daily_deliveries_total(date_str: str, project) -> int:
+    aggr = _daily_schedule_aggregates(project)
+    row = aggr[aggr["date"] == date_str]
+    if row.empty:
+        return 0
+    return int(row.iloc[0]["deliveries"])
+
+# Pre-defined hourly weight distribution (07-17) – two peaks at 10 & 14, zero at 12
+_HOURLY_WEIGHTS_RAW = {
+    7: 1,
+    8: 2,
+    9: 5,
+    10: 5,  # first peak
+    11: 3,
+    12: 0,  # lunch break – no deliveries
+    13: 0,
+    14: 5,  # second peak
+    15: 5,
+    16: 2,
+    17: 1,
+}
+_WEIGHT_SUM = sum(_HOURLY_WEIGHTS_RAW.values()) if _HOURLY_WEIGHTS_RAW else 1
+_HOURLY_WEIGHTS = {h: w / _WEIGHT_SUM for h, w in _HOURLY_WEIGHTS_RAW.items()}
+
+
+# Cache per-day allocation so results stay constant in a session
+def _get_cached_hourly_allocation(date_str: str, project):
+    cache_key = f"hourly_delivery_allocation_{project.get('id','default')}_{date_str}"
+    return st.session_state.get(cache_key)
+
+
+def _store_hourly_allocation(date_str: str, project, alloc_dict):
+    cache_key = f"hourly_delivery_allocation_{project.get('id','default')}_{date_str}"
+    st.session_state[cache_key] = alloc_dict
+
+
+def _allocate_deliveries_random(total_int: int, project, date_str: str):
+    """Randomly allocate integer deliveries to hours according to weights (multinomial)."""
+    # Prepare probability vector in fixed hour order 7-17
+    hours_order = sorted(_HOURLY_WEIGHTS.keys())
+    probs = np.array([_HOURLY_WEIGHTS[h] for h in hours_order])
+    # Seed RNG with stable seed based on date + project id so result reproducible in a session
+    seed_val = abs(hash(f"{project.get('id','p')}::{date_str}")) % (2**32)
+    rng = np.random.default_rng(seed_val)
+    allocation = rng.multinomial(total_int, probs)
+    return {h: int(allocation[i]) for i, h in enumerate(hours_order)}
+
+
+def get_hourly_construction_deliveries(date_str: str, hour: int, project) -> float:
+    """Return deliveries for the specified hour by distributing daily total over a bivariate pattern."""
+    total_deliveries_day = _daily_deliveries_total(date_str, project)
+    if total_deliveries_day == 0:
+        return 0
+
+    # Use cached allocation if exists
+    cached = _get_cached_hourly_allocation(date_str, project)
+    if cached is None:
+        alloc = _allocate_deliveries_random(total_deliveries_day, project, date_str)
+        _store_hourly_allocation(date_str, project, alloc)
+    else:
+        alloc = cached
+
+    return alloc.get(hour, 0)
+
 def get_traffic_data(date_str, hour, project, base_osm_segments=None, skip_cached=False):
     """Get traffic data for a specific date and hour.
     Uses counter profiles for statistical summaries and
@@ -774,7 +1008,7 @@ def get_traffic_data(date_str, hour, project, base_osm_segments=None, skip_cache
                     "traffic_volume": int(sim_vol), "congestion_level": cong_default,
                     "name": osm_segment_item.get("name", "N/A"), "highway_type": osm_segment_item.get("highway_type", "N/A"),
                 })
-        return {"date": date_str, "hour": hour, "traffic_segments": simulated_osm_segments_for_pydeck, "congestion_points": [], "stats": {"total_traffic": 0, "average_congestion": 0, "deliveries_count": 0}}
+        return {"date": date_str, "hour": hour, "traffic_segments": simulated_osm_segments_for_pydeck, "congestion_points": [], "stats": {"total_traffic": 0, "average_congestion": 0, "deliveries_count": 0, "access_traffic": 0, "construction_traffic": 0, "construction_share_pct": 0}}
     current_date_obj_calc = datetime.strptime(date_str, "%Y-%m-%d").date()
     total_traffic_counters, weighted_cong_sum_counters, num_primary_c, num_secondary_c = 0,0,0,0
     for profile_id_calc, profile_meta_calc in st.session_state.counter_profiles.items():
@@ -785,8 +1019,8 @@ def get_traffic_data(date_str, hour, project, base_osm_segments=None, skip_cache
         if profile_meta_calc.get('is_primary'): weighted_cong_sum_counters += cong_station * 1.5; num_primary_c +=1
         else: weighted_cong_sum_counters += cong_station; num_secondary_c += 1
     avg_cong_counters = (weighted_cong_sum_counters / ((num_primary_c*1.5)+num_secondary_c)) if ((num_primary_c*1.5)+num_secondary_c) > 0 else 0.0
-    delivery_weight_calc = 0.3 if hour < 8 or hour > 16 else (1.5 if 10 <= hour <= 14 else 1.0)
-    deliveries_calc = int(5 * delivery_weight_calc * (1 + 0.3 * avg_cong_counters))
+    # --- Real deliveries from schedule (no simulation) ---
+    deliveries_calc = int(get_hourly_construction_deliveries(date_str, hour, project))
     if base_osm_segments:
         time_factor_base = 0.15
         if 7<=hour<=9: time_factor_curr=time_factor_base+0.65+(avg_cong_counters*0.4)
@@ -796,6 +1030,11 @@ def get_traffic_data(date_str, hour, project, base_osm_segments=None, skip_cache
         time_factor_curr = max(0.05, min(time_factor_curr, 1.0))
         util_factors = {'motorway':(0.30,0.85),'trunk':(0.30,0.85),'primary':(0.30,0.85),'secondary':(0.20,0.70),'tertiary':(0.20,0.70),'residential':(0.03,0.25),'living_street':(0.01,0.15),'service':(0.02,0.20),'unclassified':(0.1,0.4),'road':(0.1,0.4)}
         default_util = (0.05,0.20); max_flow_res=30; max_flow_serv_liv=15
+
+        # --- NEW: determine which segments belong to the project's access route(s) ---
+        access_route_ids = _get_access_route_segment_ids(project, base_osm_segments)
+        access_traffic_hour = 0  # aggregated traffic for access route this hour
+
         for osm_seg_item in base_osm_segments:
             seg_cap = osm_seg_item.get('capacity',DEFAULT_CAPACITY); seg_cap = DEFAULT_CAPACITY if seg_cap==0 else seg_cap
             min_u,max_u=util_factors.get(osm_seg_item['highway_type'],default_util)
@@ -808,10 +1047,33 @@ def get_traffic_data(date_str, hour, project, base_osm_segments=None, skip_cache
             if current_hw_type=='residential': sim_volume_calc=min(sim_volume_calc,max_flow_res*seg_hash_rand_f*time_factor_curr)
             elif current_hw_type in ['service','living_street','track','path']: sim_volume_calc=min(sim_volume_calc,max_flow_serv_liv*seg_hash_rand_f*time_factor_curr)
             sim_volume_calc=max(0,min(sim_volume_calc,seg_cap*1.5))
+
+            # ---- NEW: add construction-site traffic on the access route ----
+            extra_construct = 0
+            if access_route_ids and osm_seg_item['segment_id'] in access_route_ids:
+                extra_construct = (deliveries_calc * 2) / max(1, len(access_route_ids))
+                sim_volume_calc += extra_construct
+
             congestion_calc=min(1.0,sim_volume_calc/seg_cap) if seg_cap > 0 else 0.0
             coords_for_pydeck=osm_seg_item.get('coordinates',[])
-            simulated_osm_segments_for_pydeck.append({"segment_id":osm_seg_item['segment_id'],"coordinates":coords_for_pydeck,"traffic_volume":int(sim_volume_calc),"congestion_level":congestion_calc,"name":osm_seg_item.get('name','N/A'),"highway_type":current_hw_type,"capacity":int(seg_cap)})
-    return {"date":date_str,"hour":hour,"traffic_segments":simulated_osm_segments_for_pydeck,"congestion_points":[],"stats":{"total_traffic":int(total_traffic_counters),"average_congestion":avg_cong_counters,"deliveries_count":deliveries_calc}}
+            simulated_osm_segments_for_pydeck.append({
+                "segment_id": osm_seg_item['segment_id'],
+                "coordinates": coords_for_pydeck,
+                "traffic_volume": int(sim_volume_calc),
+                "congestion_level": congestion_calc,
+                "name": osm_seg_item.get('name','N/A'),
+                "highway_type": current_hw_type,
+                "capacity": int(seg_cap),
+                "construction_traffic": int(extra_construct)
+            })
+
+            if osm_seg_item['segment_id'] in access_route_ids:
+                access_traffic_hour += int(sim_volume_calc)
+
+    # Calculate total construction traffic for the day from schedule (real data, not simulated)
+    total_construction_traffic = int(round(get_hourly_construction_deliveries(date_str, hour, project)))
+
+    return {"date": date_str, "hour": hour, "traffic_segments": simulated_osm_segments_for_pydeck, "congestion_points": [], "stats": {"total_traffic": int(total_traffic_counters), "average_congestion": avg_cong_counters, "deliveries_count": deliveries_calc, "access_traffic": access_traffic_hour, "construction_traffic": total_construction_traffic, "construction_share_pct": (deliveries_calc * 2 / access_traffic_hour * 100) if access_traffic_hour else 0}}
 
 def get_station_traffic(profile_meta, date_obj, hour):
     """Get traffic count for a specific station, date and hour from its profile data."""
@@ -822,88 +1084,6 @@ def get_station_traffic(profile_meta, date_obj, hour):
     if not filtered_df.empty: return int(round(filtered_df.iloc[0]['vehicles']))
     else: fallback_df = data_df[(data_df['month'] == month_val) & (data_df['hour'] == hour)]; return int(round(fallback_df['vehicles'].mean())) if not fallback_df.empty else 0
 
-def generate_traffic_segments(date_str, hour):
-    """
-    DEPRECATED / Placeholder: Original function to generate mock traffic segments.
-    This is now replaced by fetching OSM data and simulating traffic on it.
-    Kept for reference or if direct mock data is ever needed without OSM.
-    """
-    segments = []
-    # try:
-    #     # Centroid of the map (Zurich)
-    #     zurich_center = [8.541694, 47.376888]
-        
-    #     # Generate segments from / to each counting station
-    #     if "counter_profiles" in st.session_state and st.session_state.counter_profiles: # Check if profiles exist
-    #         for profile_id, profile in st.session_state.counter_profiles.items():
-    #             # Skip if no coordinates
-    #             if 'coordinates' not in profile or not profile['coordinates']:
-    #                 st.write(f"Debug: Profile missing coordinates: {profile_id}")
-    #                 continue
-                    
-    #             # Get coordinates for this station
-    #             station_coords = profile['coordinates']
-    #             # Convert from [lat, lon] to [lon, lat] format
-    #             station_coords = [station_coords[1], station_coords[0]]
-                
-    #             # Get traffic volume
-    #             current_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    #             traffic = get_station_traffic(profile, current_date, hour)
-                
-    #             # Create a segment from center to station
-    #             congestion = min(1.0, traffic / (400 if not profile.get('is_primary', False) else 500))
-                
-    #             # Create the segment
-    #             segment = {
-    #                 "segment_id": f"segment_{profile_id}",
-    #                 "start_node": "zurich_center",
-    #                 "end_node": profile_id,
-    #                 "length": 2000,  # Example length in meters
-    #                 "speed_limit": 50,
-    #                 "traffic_volume": traffic,
-    #                 "congestion_level": congestion,
-    #                 "coordinates": [
-    #                     zurich_center,
-    #                     station_coords
-    #                 ]
-    #             }
-                
-    #             segments.append(segment)
-                                
-    #             # Create variation segment if this is a primary station (for visual interest)
-    #             if profile.get('is_primary', False):
-    #                 # Create a segment that detours a bit
-    #                 midpoint = [
-    #                     (zurich_center[0] + station_coords[0]) / 2 + 0.005,
-    #                     (zurich_center[1] + station_coords[1]) / 2 - 0.005
-    #                 ]
-                    
-    #                 segment_alt = {
-    #                     "segment_id": f"segment_{profile_id}_alt",
-    #                     "start_node": "zurich_center",
-    #                     "end_node": profile_id,
-    #                     "length": 2500,  # Longer route
-    #                     "speed_limit": 50,
-    #                     "traffic_volume": int(traffic * 0.7),  # Less traffic on alt route
-    #                     "congestion_level": congestion * 0.7,
-    #                     "coordinates": [
-    #                         zurich_center,
-    #                         midpoint,
-    #                         station_coords
-    #                     ]
-    #                 }
-                    
-    #                 segments.append(segment_alt)
-    #     else:
-    #         if st.session_state.get("debug_mode", False):
-    #              st.write("Debug (generate_traffic_segments): No counter_profiles in session_state to generate segments from.")
-
-    # except Exception as e:
-    #     st.error(f"Error generating traffic segments: {str(e)}")
-    #     import traceback
-    #     st.write(f"Debug: Error details: {traceback.format_exc()}")
-    
-    return segments
 
 def generate_congestion_points(segments):
     """Generate congestion hotspots based on traffic segments (now expects OSM segments)"""
@@ -925,3 +1105,192 @@ def generate_congestion_points(segments):
                 })
     
     return congestion_points
+
+# Helper: cache and retrieve OSM segment ids that belong to the project's access route(s)
+
+def _get_access_route_segment_ids(project, base_osm_segments, tol=0.0005):
+    """Return a set of OSM segment_ids that spatially match the access routes of the project.
+
+    Parameters
+    ----------
+    project : dict
+        The current project dictionary (must contain key 'access_routes').
+    base_osm_segments : list[dict]
+        List with OSM segment dictionaries as produced by `generate_osm_traffic_segments`.
+    tol : float
+        Distance tolerance (in degrees) for matching a segment to a route.
+    """
+    cache_key = f"access_route_seg_ids_{project.get('id', 'default')}"
+    if cache_key in st.session_state:
+        return st.session_state[cache_key]
+
+    # Build shapely objects for the routes first
+    route_geoms = []
+    for route in project.get("access_routes", []):
+        if not route or "coordinates" not in route:
+            continue
+        try:
+            if route.get("type") == "LineString":
+                route_geoms.append(LineString(route["coordinates"]))
+            elif route.get("type") == "Polygon":  # take exterior ring as line
+                route_geoms.append(LineString(route["coordinates"][0]))
+        except Exception:
+            # Skip invalid geometries silently
+            continue
+
+    seg_ids = set()
+    if route_geoms and base_osm_segments:
+        for seg in base_osm_segments:
+            coords = seg.get("coordinates", [])
+            if len(coords) < 2:
+                continue
+            try:
+                seg_line = LineString(coords)
+            except Exception:
+                continue
+            for rline in route_geoms:
+                if seg_line.distance(rline) <= tol:
+                    seg_ids.add(seg["segment_id"])
+                    break
+
+    st.session_state[cache_key] = seg_ids
+    return seg_ids
+
+def _get_access_osm_segments(project, base_osm_segments, tol=0.0005):
+    """Return a list of OSM segment dictionaries that overlap with the project's access route.
+
+    This function re-uses `_get_access_route_segment_ids` to identify relevant
+    segment IDs and then filters `base_osm_segments`.  The result is cached in
+    `st.session_state` so that the spatial comparison is only executed once per
+    project (or until `base_osm_segments` is refreshed).
+    """
+    cache_key = f"access_osm_segments_{project.get('id', 'default')}"
+    if cache_key in st.session_state:
+        return st.session_state[cache_key]
+
+    if not base_osm_segments:
+        st.session_state[cache_key] = []
+        return []
+
+    access_route_ids = _get_access_route_segment_ids(project, base_osm_segments, tol)
+    filtered_segments = [seg for seg in base_osm_segments if seg.get('segment_id') in access_route_ids]
+
+    st.session_state[cache_key] = filtered_segments
+    return filtered_segments
+
+# ---------------------------------------------------------------------------
+# Construction-stats tab helpers
+# ---------------------------------------------------------------------------
+
+
+def _daily_schedule_aggregates(project):
+    """Return DataFrame with columns date, persons, material, deliveries aggregated per day (cached)."""
+    cache_key = f"schedule_daily_aggr_{project.get('id','default')}"
+    if cache_key in st.session_state:
+        return st.session_state[cache_key]
+
+    sched = _load_construction_schedule(project)
+    if sched.empty or "Anfangstermin" not in sched.columns:
+        df_out = pd.DataFrame(columns=["date", "persons", "material", "deliveries"])
+        st.session_state[cache_key] = df_out
+        return df_out
+
+    sched = _preprocess_schedule_df(sched)
+
+    # Helper to compute deliveries per row
+    def _row_deliveries(mat):
+        try:
+            # Strip any non-numeric parts (like 21Kran1211510 -> 21)
+            mat_str = str(mat)
+            # Extract numeric prefix if it exists
+            numeric_part = re.match(r'^\d+', mat_str)
+            if numeric_part:
+                mat_val = float(numeric_part.group(0))
+            else:
+                # Try direct conversion, will raise ValueError if not possible
+                mat_val = float(mat_str)
+        except Exception:
+            mat_val = 0.0
+        return max(1, int(np.ceil(mat_val / 10.0))) if mat_val > 0 else 0
+
+    # Convert Material to numeric safely, coercing errors to NaN
+    sched["_material_numeric"] = pd.to_numeric(sched["Material"], errors="coerce")
+    # Fill NaN with 0
+    sched["_material_numeric"] = sched["_material_numeric"].fillna(0.0)
+    # Calculate deliveries
+    sched["_deliveries_row"] = sched["Material"].apply(_row_deliveries)
+    
+    # Safe conversion for Personen column too
+    sched["_persons_numeric"] = pd.to_numeric(sched["Personen"], errors="coerce").fillna(0.0)
+
+    aggr = (
+        sched.groupby("_anfang_date")
+        .agg(
+            persons=("_persons_numeric", "sum"),
+            material=("_material_numeric", "sum"),
+            deliveries=("_deliveries_row", "sum"),
+        )
+        .reset_index()
+        .rename(columns={"_anfang_date": "date"})
+    )
+
+    # Ensure correct dtypes
+    aggr["material"] = aggr["material"].astype(float)
+    aggr["persons"] = aggr["persons"].astype(float)
+    aggr["deliveries"] = aggr["deliveries"].astype(int)
+
+    st.session_state[cache_key] = aggr
+    return aggr
+
+
+def _render_construction_stats_tab(project):
+    """Render the second tab with three time-series histograms."""
+    aggr_df = _daily_schedule_aggregates(project)
+    if aggr_df.empty:
+        st.warning("Keine Daten im Bauzeitplan gefunden.")
+        return
+
+    # Convert date col to datetime for Plotly
+    aggr_df["date_dt"] = pd.to_datetime(aggr_df["date"])
+
+    # Common layout tweaks
+    def _base_bar(x, y, name, color):
+        fig = go.Figure(data=[go.Bar(x=x, y=y, marker_color=color, width=24 * 60 * 60 * 1000 * 0.7)])
+        fig.update_layout(
+            xaxis=dict(rangeslider=dict(visible=True), type="date"),
+            yaxis_title=name,
+            height=250,
+            margin=dict(l=10, r=10, t=30, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+        )
+        return fig
+
+    st.subheader("Personen auf der Baustelle (pro Tag)")
+    st.plotly_chart(_base_bar(aggr_df["date_dt"], aggr_df["persons"], "Personen", "#1f77b4"), use_container_width=True)
+
+    st.subheader("Material (Einheiten) pro Tag")
+    st.plotly_chart(_base_bar(aggr_df["date_dt"], aggr_df["material"], "Material", "#2ca02c"), use_container_width=True)
+
+    st.subheader("Lieferungen pro Tag")
+    st.plotly_chart(_base_bar(aggr_df["date_dt"], aggr_df["deliveries"], "Lieferungen", "#d62728"), use_container_width=True)
+
+def show_dashboard(project):
+    """Show the dashboard for visualizing traffic simulation results"""
+    # Set widget width for dashboard - now handled in streamlit_app.py
+    # st.session_state.widget_width_percent = 35
+    
+    # Apply chart styling for this page
+    apply_chart_styling()
+    
+    # --- Tab structure -------------------------------------------------
+    tab1, tab2, tab3 = st.tabs(["Traffic", "Construction Stats", "Other"])
+    
+    with tab1:
+        _render_traffic_tab(project)
+    
+    with tab2:
+        _render_construction_stats_tab(project)
+    
+    with tab3:
+        st.info("Platzhalter für zukünftige Inhalte …")
