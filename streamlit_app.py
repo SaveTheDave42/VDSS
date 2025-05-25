@@ -4,6 +4,7 @@ import json  # For sample GeoJSON
 import requests
 from utils.custom_styles import apply_custom_styles, apply_chart_styling, apply_map_layout, apply_widget_panel_layout
 from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
+from utils.legend_widget import show_legend_widget, check_geojson_layers_uploaded
 
 # --- Imports für Seiten-Module ---
 import importlib
@@ -243,6 +244,18 @@ with col_widget:
 # --- Render Map in Map Column ---
 with col_map:
     render_background_map(map_placeholder)
+    
+    # --- Show Legend Widget as Overlay ---
+    # Create an overlay container for the legend
+    legend_placeholder = st.empty()
+    with legend_placeholder.container():
+        # Show Legend Widget Based on Current Page
+        show_geojson_for_setup = False
+        if current_page == "project_setup":
+            show_geojson_for_setup = check_geojson_layers_uploaded()
+        
+        # Display the legend widget
+        show_legend_widget(current_page, show_geojson_for_setup)
 
 # --- Add JavaScript for Map Resizing ---
 st.markdown("""
