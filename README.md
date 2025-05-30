@@ -1,174 +1,322 @@
-# Construction Site Traffic Management System
+# Baustellenverkehrs-Management-System (VDSS)
 
-A comprehensive application for managing and visualizing traffic around construction sites.
+Ein umfassendes System zur Verwaltung und Visualisierung von Verkehr rund um Baustellen mit interaktiven Karten, Datenanalyse und Simulation.
 
-## Features
+## 🎯 Überblick
 
-- **Project Setup**: Create new construction site projects by uploading Excel files and defining geographical areas
-- **Admin Panel**: Manage existing projects, update data, and run traffic simulations
-- **Dashboard**: Visualize traffic conditions with interactive maps and charts
-- **Resident Information**: Simplified view for residents affected by construction
+Das Baustellenverkehrs-Management-System (VDSS - Verkehrsdaten-Simulations-System) ist eine deutschsprachige Webanwendung, die es ermöglicht, Verkehrsauswirkungen von Baustellen zu analysieren, zu simulieren und zu visualisieren. Das System kombiniert reale Verkehrszählungsdaten mit OpenStreetMap-basierten Simulationen für eine umfassende Verkehrsanalyse.
 
-## Technology Stack
+## ✨ Hauptfunktionen
 
-- **Backend**: FastAPI (Python)
-- **Data Processing**: Pandas, GeoPandas
-- **Map Data**: OpenStreetMap via OSMnx
-- **Traffic Simulation**: Python-based approximation
-- **Frontend**: Streamlit
-- **PDF Export**: ReportLab
+### 📊 Dashboard
+- **Interaktive Verkehrskarte** mit PyDeck-basierter Visualisierung
+- **Echtzeit-Verkehrssimulation** basierend auf OSM-Daten und Verkehrszählstellen
+- **KPI-Übersicht** mit Tooltips: Gesamtlieferungen, Verkehrsanteile, Verkehrsbelastung
+- **Zeitliche Analyse** mit wöchentlichen und stündlichen Verkehrsmustern
+- **Animierte Verkehrsverläufe** mit Play/Pause-Funktionalität
 
-## Project Structure
+### 🏗️ Projekteinrichtung
+- **Excel-Upload** für Bauzeitpläne (Material_Lieferungen.csv)
+- **GeoJSON-Konfiguration** für Baustellenpolygone und Zufahrtsrouten
+- **Verkehrszählstellen-Management** mit CSV-Import
+- **Liefertage und -zeiten** Konfiguration
+- **Automatische Koordinatenverarbeitung** und Geocoding
+
+### ⚙️ Admin-Panel
+- **Projektbearbeitung** und Datenverwaltung
+- **Excel-Aktualisierung** mit Validierung
+- **Simulationseinstellungen** und -ausführung
+- **Datenexport** und Berichtserstellung
+
+### 🏠 Anwohner-Information
+- **Vereinfachte Verkehrsübersicht** für betroffene Anwohner
+- **Wochenübersicht** mit Verkehrsstatus (Niedrig/Mäßig/Stark)
+- **Bauzeitplan-Integration** mit Material- und Personalprognosen
+
+## 🛠️ Technologie-Stack
+
+### Backend
+- **FastAPI** (Python) - Moderne, schnelle Web-API
+- **Uvicorn** - ASGI-Server für Produktions-Performance
+- **Pydantic** - Datenvalidierung und Serialisierung
+
+### Frontend
+- **Streamlit** - Interaktive Web-Benutzeroberfläche
+- **PyDeck** - 3D-Kartenvisualisierung mit WebGL
+- **Plotly** - Interaktive Diagramme und Grafiken
+
+### Geodaten & Karten
+- **OpenStreetMap (OSM)** - Straßennetzwerk-Daten
+- **OSMnx** - OSM-Daten-Processing und Netzwerk-Analyse
+- **GeoPandas** - Geospatiale Datenverarbeitung
+- **PyProj** - Koordinatensystem-Transformationen
+
+### Datenverarbeitung
+- **Pandas** - Datenmanipulation und -analyse
+- **NumPy** - Numerische Berechnungen
+- **OpenPyXL** - Excel-Datei-Verarbeitung
+
+### PDF & Berichte
+- **ReportLab** - PDF-Generierung für Berichte
+
+## 📁 Projektstruktur
 
 ```
-├── app/                  # FastAPI backend
-│   ├── api/              # API endpoints
-│   │   └── routers/      # Router modules
-│   ├── core/             # Core functionality
-│   ├── models/           # Data models
-│   ├── services/         # Business logic
-│   ├── utils/            # Utility functions
-│   ├── static/           # Static files
-│   └── templates/        # Template files
-├── data/                 # Data storage directory
-│   ├── projects/         # Project files
-│   ├── simulations/      # Simulation results
-│   └── reports/          # Generated reports
-├── pages/                # Streamlit page modules
-├── streamlit_app.py      # Streamlit frontend
-├── requirements.txt      # Python dependencies
-└── README.md             # This file
+VDSS/
+├── app/                      # FastAPI Backend
+│   ├── main.py              # FastAPI Hauptanwendung
+│   ├── api/routers/         # API-Endpunkte
+│   │   ├── projects.py      # Projekt-Management
+│   │   ├── simulation.py    # Verkehrssimulation
+│   │   └── export.py        # Datenexport
+│   ├── models/              # Pydantic Datenmodelle
+│   │   └── simulation.py    # Simulations-Datenstrukturen
+│   └── services/            # Business Logic
+│       └── simulation_service.py  # Verkehrssimulation
+├── pages/                   # Streamlit Seiten-Module
+│   ├── dashboard.py         # Haupt-Dashboard (1372 Zeilen)
+│   ├── project_setup.py     # Projekteinrichtung (567 Zeilen)
+│   ├── admin.py            # Admin-Panel (386 Zeilen)
+│   └── resident_info.py     # Anwohner-Info (382 Zeilen)
+├── utils/                   # Hilfsfunktionen
+│   ├── map_utils.py         # Karten-Utilities
+│   ├── legend_widget.py     # Karten-Legende
+│   ├── custom_styles.py     # CSS-Styling
+│   └── dashoboard_utils.py  # Dashboard-Hilfsfunktionen
+├── data/                    # Datenverzeichnis
+│   ├── projects/            # Projektdateien
+│   ├── prepared/            # Verarbeitete Daten
+│   │   ├── profiles/        # Verkehrszählprofile
+│   │   └── osm_cache/       # OSM-Daten-Cache
+│   ├── simulations/         # Simulationsergebnisse
+│   └── reports/             # Generierte Berichte
+├── streamlit_app.py         # Streamlit Hauptanwendung
+├── run.py                   # Anwendungs-Starter
+└── requirements.txt         # Python-Abhängigkeiten
 ```
 
-## Installation
+## 🚀 Installation und Ausführung
 
-1. Clone the repository:
+### Voraussetzungen
+- Python 3.8+
+- Git
 
+### 1. Repository klonen
 ```bash
-git clone https://github.com/
-cd construction-traffic-management
+git clone <repository-url>
+cd VDSS
 ```
 
-2. Create a virtual environment:
-
+### 2. Virtual Environment erstellen
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
 ```
 
-3. Install dependencies:
-
+### 3. Abhängigkeiten installieren
 ```bash
 pip install -r requirements.txt
 ```
 
-## Running the Application
-
-### Start the FastAPI Backend
-
+### 4. Anwendung starten
 ```bash
-uvicorn app.main:app --reload
+# Beide Services starten (empfohlen):
+python run.py
+
+# Oder separat:
+python run.py backend   # Nur FastAPI (Port 8000)
+python run.py frontend  # Nur Streamlit (Port 8501)
 ```
 
-The API will be available at http://localhost:8000
+Die Anwendung öffnet sich automatisch unter `http://localhost:8501`
 
-### Start the Streamlit Frontend
+## 📊 Verkehrssimulations-Logik
 
-```bash
-streamlit run streamlit_app.py
+### 1. Datengrundlage
+
+**OpenStreetMap-Integration:**
+- Automatischer Download von Straßennetzwerk-Daten innerhalb der Projektgrenzen
+- Lokales Caching (GeoPackage) zur Performance-Optimierung
+- Kapazitätszuordnung basierend auf Straßentyp (`highway`-Tag)
+
+**Verkehrszählstellen:**
+- Integration realer Verkehrszählungsdaten aus CSV-Dateien
+- Profile pro Zählstelle mit wöchentlichen und stündlichen Mustern
+- Primäre und sekundäre Zählstellen-Gewichtung
+
+### 2. Verkehrsvolumen-Simulation
+
+**Mehrstufiger Ansatz:**
+
+1. **Globaler Stundenfaktor (`time_factor_current_hour`)**:
+   - Berücksichtigt typische Tagesverläufe (Rush-Hour: 7-9, 16-18 Uhr)
+   - Integration realer Überlastung von Verkehrszählstellen
+   - Basis: 0.05-0.95 je nach Tageszeit und realer Verkehrslage
+
+2. **Straßentyp-spezifische Nutzung**:
+   ```python
+   utilization_factors = {
+       'motorway': (0.30, 0.85),     # Autobahn: 30-85% Kapazität
+       'primary': (0.30, 0.85),      # Hauptstraße: 30-85%
+       'residential': (0.03, 0.25),  # Wohnstraße: 3-25%
+       'service': (0.02, 0.20)       # Erschließung: 2-20%
+   }
+   ```
+
+3. **Segment-spezifische Variabilität**:
+   - Hash-basierte, stabile Zufallsfaktoren pro Straßensegment
+   - Gewährleistet realistische Variation zwischen Straßen gleichen Typs
+   - Faktor: 0.3-1.0 basierend auf Segment-ID
+
+4. **Baustellenverkehr-Integration**:
+   - Reale Lieferungen aus Bauzeitplan (Excel-Import)
+   - Verteilung auf Zufahrtsrouten basierend auf GeoJSON-Geometrie
+   - Formel: `1 + ceil(Material_kg / 10)` Lieferungen pro Tag
+
+### 3. Stundliche Verkehrsverteilung
+
+**Lieferverkehr-Muster:**
+```python
+stundliche_gewichtung = {
+    7: 1,   8: 2,   9: 5,
+    10: 5,  # Erster Peak
+    11: 3,  12: 0,  # Mittagspause
+    13: 0,  14: 5,  # Zweiter Peak
+    15: 5,  16: 2,  17: 1
+}
 ```
 
-The web application will open automatically in your browser at http://localhost:8501
+**Zuordnungsverfahren:**
+- Multinomiale Zufallsverteilung für ganzzahlige Lieferungen
+- Seed basiert auf Datum + Projekt-ID für Reproduzierbarkeit
+- Cache-System für konsistente Tageswerte
 
-## API Documentation
+### 4. Überlastungsberechnung
 
-FastAPI automatically generates API documentation:
+```python
+congestion_level = min(1.0, simulated_volume / segment_capacity)
+```
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+**Visualisierung:**
+- Grün (0.0-0.3): Geringer Verkehr
+- Gelb (0.3-0.7): Mäßiger Verkehr  
+- Rot (0.7-1.0): Starker Verkehr/Stau
 
-## Data Format
+## 🗂️ Datenformate
 
-### Excel File Structure
+### Excel-Bauzeitplan (Material_Lieferungen.csv)
+```csv
+Anfangstermin,Material,Personen,Phase,Beschreibung
+2024-01-15 08:00,150,5,Fundament,Betonlieferung
+2024-01-16 10:00,200,8,Rohbau,Stahlträger
+```
 
-The application expects an Excel file with the following sheets and columns:
+### Verkehrszählstellen (counters.csv)
+```csv
+profile_id,lat,lon,name,display_name
+12345_IN,47.3769,8.5417,Bahnhofstrasse,Bahnhofstrasse Richtung Innenstadt
+```
 
-1. **Deliveries sheet**:
-   - DeliveryID
-   - Date
-   - TimeWindow
-   - VehicleType
-   - Weight
+### Verkehrsprofile (profiles/{station_id}_{direction}.csv)
+```csv
+weekday,month,hour,vehicles
+Monday,1,8,245
+Monday,1,9,378
+```
 
-2. **Schedule sheet**:
-   - Phase
-   - StartDate
-   - EndDate
-   - Description
+## 🎛️ Konfiguration
 
-3. **Vehicles sheet**:
-   - VehicleType
-   - Length
-   - Width
-   - Weight
+### Projekt-Setup
+1. **Excel-Upload**: Bauzeitplan mit Material, Personal, Terminen
+2. **GeoJSON-Definition**: Baustellenpolygon und Zufahrtsrouten
+3. **Verkehrszählstellen**: Auswahl relevanter Messpunkte
+4. **Zeitfenster**: Liefertage (Mo-Fr) und -zeiten (6-18 Uhr)
 
-## Traffic Simulation Logic
+### Performance-Optimierung
+- **OSM-Caching**: Lokale GeoPackage-Dateien
+- **Wochen-Vorladeung**: Batch-Berechnung für ganze Wochen
+- **Session-Cache**: Koordinaten und Profile in `st.session_state`
 
-The application simulates traffic flow on OpenStreetMap (OSM) road segments within a project's defined `map_bounds`. The goal is to provide a plausible visualization of traffic density and congestion levels, influenced by both general hourly patterns and, if available, data from real-world traffic counters.
+## 🔧 API-Endpunkte
 
-### 1. Data Acquisition and Preparation
+### Projekte
+```
+GET  /api/projects/           # Alle Projekte abrufen
+POST /api/projects/           # Neues Projekt erstellen
+GET  /api/projects/{id}       # Projekt details
+PUT  /api/projects/{id}       # Projekt aktualisieren
+```
 
-- **OSM Road Network**: Using the `OSMnx` library, the system fetches drivable road segments (network_type='drive_service') within the project's `map_bounds`. This data is cached locally (as a GeoPackage file in `data/prepared/osm_cache/`) to speed up subsequent loads and reduce API calls to OpenStreetMap. The cache key is based on the project ID and the specific map_bounds coordinates.
-- **Base Capacity Assignment**: Each fetched OSM segment is assigned a base `capacity` (vehicles per hour, vph) based on its `highway` tag (e.g., 'primary', 'secondary', 'residential'). A predefined `CAPACITY_MAP` in `pages/dashboard.py` holds these default capacities. For example, a 'primary' road might have a capacity of 1500 vph, while a 'residential' road might have 400 vph.
+### Simulation
+```
+POST /api/simulation/run      # Simulation ausführen
+GET  /api/simulation/results  # Ergebnisse abrufen
+```
 
-### 2. Hourly Traffic Volume Simulation
+### Export
+```
+POST /api/export/pdf          # PDF-Bericht generieren
+```
 
-For each OSM segment and for each hour selected by the user, the system simulates the traffic volume. This simulation considers several factors:
+## 🎨 Benutzeroberfläche
 
-- **Overall Hourly Busyness (`time_factor_current_hour`)**: 
-    - A global factor (ranging roughly from 0.05 to 0.95) is calculated for the current simulation hour.
-    - This factor has a base value and is increased during typical peak hours (e.g., 7-9 AM, 4-6 PM) and moderately during mid-day.
-    - Crucially, if data from traffic counting stations (`counter_profiles`) is available for the project, the `average_congestion_from_counters` for that specific hour influences this `time_factor_current_hour`. Higher real-world congestion leads to a higher `time_factor_current_hour`, increasing the overall simulated traffic across all OSM segments.
+### Design-Prinzipien
+- **Deutsche Lokalisierung**: Vollständig deutschsprachige Oberfläche
+- **Responsive Layout**: Anpassbare Widget-Breite (30% Dashboard, 50% Setup)
+- **Interaktive Karten**: PyDeck mit 3D-Visualisierung
+- **Tooltips**: Kontextuelle Hilfe für KPIs und Karten-Elemente
 
-- **Typical Utilization Bands per Road Type (`utilization_factors`)**:
-    - A dictionary `utilization_factors` (in `pages/dashboard.py`) defines a typical *minimum* and *maximum* percentage of capacity that a road of a certain `highway_type` is expected to utilize. 
-    - Example: `'residential': (0.03, 0.25)` means residential roads typically use between 3% and 25% of their assigned base capacity.
-    - `'primary': (0.30, 0.85)` means primary roads typically use between 30% and 85% of their base capacity.
+### Styling
+- **Corporate Colors**: Blau (#0F05A0) als Primärfarbe
+- **KPI-Cards**: Einheitliches Design mit Hover-Effekten
+- **Karten-Legende**: Überlagerung mit Bereichen und Verkehrsstatus
+- **Diagramme**: Plotly mit deutscher Lokalisierung
 
-- **Hourly Driven Utilization**: 
-    - The `time_factor_current_hour` (overall busyness) determines where, within the `[min_util, max_util]` band of its type, a road segment's current utilization lies. 
-    - If `time_factor_current_hour` is low (e.g., off-peak, low counter congestion), the utilization will be closer to `min_util` for that road type. If high, it will be closer to `max_util`.
-    - Formula sketch: `hourly_driven_utilization = min_util + (max_util - min_util) * time_factor_current_hour`
+## 🔍 Debug & Monitoring
 
-- **Per-Segment Random Variability (`segment_hash_random_factor`)**: 
-    - To ensure not all roads of the same type look identical, a stable random factor (between 0.3 and 1.0, derived from a hash of the segment's ID) is calculated for each segment.
-    - This factor then scales the `hourly_driven_utilization` to provide inherent variability. Some residential roads will naturally be a bit busier or quieter than others, even under the same general hourly demand.
-    - Formula sketch: `final_utilization_rate = hourly_driven_utilization * segment_hash_random_factor` (clamped between a minimum like 0.5% and maximum 100%).
+### Debug-Modi
+```python
+DEBUG_COORDS = False  # Koordinaten-Verarbeitung
+DEBUG_OSM = False     # OSM-Daten-Abruf
+```
 
-- **Simulated Volume Calculation**: 
-    - The `simulated_volume` for a segment is then `segment_capacity * final_utilization_rate`.
+### Cache-Management
+- **OSM-Cache**: `data/prepared/osm_cache/osm_segments_{hash}.gpkg`
+- **Profil-Cache**: Session-basiert für Verkehrszählstellen
+- **Wochen-Cache**: `traffic_data_week_{year}_{week}_{project_id}`
 
-- **Special Override for Low-Traffic Roads**:
-    - For road types like 'residential', 'service', and 'living_street', simply applying a percentage of their (potentially already low) capacity might still lead to unrealistically high or low absolute traffic numbers if the `time_factor_current_hour` is at an extreme.
-    - To make these more plausible, a maximum typical hourly flow is defined (e.g., `max_hourly_flow_residential = 30` vph, `max_hourly_flow_service_living = 15` vph).
-    - The actual flow for these road types is then calculated as: `absolute_flow = max_flow_for_type * segment_hash_random_factor * time_factor_current_hour`.
-    - The final `simulated_volume` for these types is then the *minimum* of the capacity-percentage-based calculation and this absolute flow-based calculation, ensuring it doesn't exceed realistic small-street throughputs while still reacting to hourly demand.
+## 📈 Erweiterbarkeit
 
-- **Caps and Floors**: 
-    - The `simulated_volume` is capped at 150% of the segment's base capacity to prevent extreme, unrealistic overflow in this simplified model.
-    - Volume is also ensured to be non-negative.
+### Modulare Architektur
+- **Seiten-Module**: Unabhängige Streamlit-Pages
+- **Utility-Module**: Wiederverwendbare Funktionen
+- **API-Router**: RESTful Backend-Services
 
-### 3. Congestion Level Calculation
+### Integrationsmöglichkeiten
+- **SUMO**: Für detaillierte Mikroskopische Simulation
+- **Real-time APIs**: Live-Verkehrsdaten-Integration
+- **GIS-Systeme**: Erweiterte Geodaten-Quellen
 
-- The `congestion_level` for each segment is calculated as:
-  `congestion = min(1.0, simulated_volume / segment_capacity)` (if capacity > 0).
-- This results in a value between 0.0 (no congestion) and 1.0 (at or over capacity).
+## Beitrag zur Entwicklung
+- **Manuel Weilenmann** : Entwicklung und Design
 
-### 4. Visualization
+### Code-Standards
+- **Deutsch**: Kommentare und Dokumentation
+- **Type Hints**: Python-Typisierung wo möglich
+- **Docstrings**: Funktionsdokumentation
+- **Error Handling**: Umfassende Fehlerbehandlung
 
-- The `congestion_level` is then used to color-code the road segments on the Folium map in the dashboard (e.g., green for low, yellow for medium, red for high congestion).
-- When the user moves the hour slider or uses the play/pause animation feature, these calculations are re-run for the selected hour, and the map updates to reflect the simulated traffic conditions.
+### Testing
+```bash
+pytest                        # Unit Tests
+pytest-asyncio              # Async API Tests
+```
 
-This multi-factor approach aims to provide a more nuanced and plausible representation of traffic dynamics than a simple, uniform distribution, while still being a manageable simulation for a web application.
+---
 
-## PDF Export
+**Entwickelt für effizientes Baustellenverkehrs-Management mit modernen Web-Technologien.**
+
+

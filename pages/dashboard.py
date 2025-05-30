@@ -401,6 +401,12 @@ def _render_traffic_tab(project):
     # Daily Traffic Volume (title removed)
     dates_ts = days_in_week if days_in_week else [selected_week_dict["start_date"] + timedelta(days=i) for i in range(7)]
     
+    # German weekday mapping
+    german_weekdays = {
+        'Monday': 'Mo', 'Tuesday': 'Di', 'Wednesday': 'Mi', 
+        'Thursday': 'Do', 'Friday': 'Fr', 'Saturday': 'Sa', 'Sunday': 'So'
+    }
+    
     daily_totals_ts = []
     if base_osm_segments: # Only calculate if we have segments
         daily_totals_ts = [
@@ -412,11 +418,18 @@ def _render_traffic_tab(project):
     else: # Provide zeros or placeholder if no segments
         daily_totals_ts = [0] * len(dates_ts)
 
-    fig_daily = go.Figure(data=[go.Bar(x=[d.strftime("%a, %d.%m") for d in dates_ts], y=daily_totals_ts, name="Total Daily Traffic", marker_color="#0F05A0")])
+    # Create German formatted date labels
+    x_labels = []
+    for d in dates_ts:
+        english_day = d.strftime("%A")
+        german_day = german_weekdays.get(english_day, d.strftime("%a"))
+        x_labels.append(f"{german_day}, {d.strftime('%d.%m')}")
+
+    fig_daily = go.Figure(data=[go.Bar(x=x_labels, y=daily_totals_ts, name="Total Daily Traffic", marker_color="#0F05A0")])
     fig_daily.update_layout(
         xaxis_title=None,
         xaxis=dict(tickfont=dict(color='#0F05A0')),
-        yaxis_title="Total Vehicles",
+        yaxis_title="Fahrzeuge insgesamt",
         yaxis=dict(tickfont=dict(color='#0F05A0'), titlefont=dict(color='#0F05A0')),
         margin=dict(l=10, r=10, t=30, b=10),
         height=220,
@@ -446,14 +459,14 @@ def _render_traffic_tab(project):
         hourly_deliveries_hr = [0] * len(hours_list_hr)
     
     fig_hourly = go.Figure()
-    fig_hourly.add_trace(go.Bar(x=hours_list_hr, y=hourly_traffic_hr, name="Traffic Volume", marker_color="#0F05A0", opacity=0.7))
-    fig_hourly.add_trace(go.Scatter(x=hours_list_hr, y=hourly_congestion_hr, mode="lines+markers", name="Congestion", line=dict(color="#d62728"), yaxis="y2"))
-    fig_hourly.add_trace(go.Scatter(x=hours_list_hr, y=hourly_deliveries_hr, mode="lines+markers", name="Deliveries", line=dict(color="#2ca02c", dash="dot"), marker=dict(size=7), yaxis="y3"))
+    fig_hourly.add_trace(go.Bar(x=hours_list_hr, y=hourly_traffic_hr, name="Verkehrsaufkommen", marker_color="#0F05A0", opacity=0.7))
+    fig_hourly.add_trace(go.Scatter(x=hours_list_hr, y=hourly_congestion_hr, mode="lines+markers", name="Verkehrsbelastung", line=dict(color="#d62728"), yaxis="y2"))
+    fig_hourly.add_trace(go.Scatter(x=hours_list_hr, y=hourly_deliveries_hr, mode="lines+markers", name="Lieferungen", line=dict(color="#2ca02c", dash="dot"), marker=dict(size=7), yaxis="y3"))
     fig_hourly.update_layout(
-        xaxis=dict(title="Hour of Selected Day"),
-        yaxis=dict(title="Traffic Volume", titlefont=dict(color="#0F05A0"), tickfont=dict(color="#0F05A0"), side="left"),
-        yaxis2=dict(title="Congestion", titlefont=dict(color="#d62728"), tickfont=dict(color="#d62728"), anchor="x", overlaying="y", side="right", range=[0, 1]),
-        yaxis3=dict(title="Deliveries", titlefont=dict(color="#2ca02c"), tickfont=dict(color="#2ca02c"), anchor="free", overlaying="y", side="right", position=0.85, showgrid=False),
+        xaxis=dict(title="Stunde des ausgewählten Tages"),
+        yaxis=dict(title="Verkehrsaufkommen", titlefont=dict(color="#0F05A0"), tickfont=dict(color="#0F05A0"), side="left"),
+        yaxis2=dict(title="Verkehrsbelastung", titlefont=dict(color="#d62728"), tickfont=dict(color="#d62728"), anchor="x", overlaying="y", side="right", range=[0, 1]),
+        yaxis3=dict(title="Lieferungen", titlefont=dict(color="#2ca02c"), tickfont=dict(color="#2ca02c"), anchor="free", overlaying="y", side="right", position=0.85, showgrid=False),
         legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5),
         margin=dict(l=10,r=10,t=50,b=10), 
         height=280,

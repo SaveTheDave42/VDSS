@@ -110,7 +110,7 @@ def render_background_map(placeholder_widget):
             layers=layers,
             initial_view_state=view_state,
             tooltip=True,
-            map_style='mapbox://styles/mapbox/light-v9'
+            map_style='mapbox://styles/mapbox/light-v8'
         )
         placeholder_widget.pydeck_chart(deck)
 
