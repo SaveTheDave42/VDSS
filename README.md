@@ -2,33 +2,33 @@
 
 Ein umfassendes System zur Verwaltung und Visualisierung von Verkehr rund um Baustellen mit interaktiven Karten, Datenanalyse und Simulation.
 
-## 🎯 Überblick
+## Überblick
 
 Das Baustellenverkehrs-Management-System (VDSS - Verkehrsdaten-Simulations-System) ist eine deutschsprachige Webanwendung, die es ermöglicht, Verkehrsauswirkungen von Baustellen zu analysieren, zu simulieren und zu visualisieren. Das System kombiniert reale Verkehrszählungsdaten mit OpenStreetMap-basierten Simulationen für eine umfassende Verkehrsanalyse.
 
-## ✨ Hauptfunktionen
+## Hauptfunktionen
 
-### 📊 Dashboard
+### Dashboard
 - **Interaktive Verkehrskarte** mit PyDeck-basierter Visualisierung
 - **Echtzeit-Verkehrssimulation** basierend auf OSM-Daten und Verkehrszählstellen
 - **KPI-Übersicht** mit Tooltips: Gesamtlieferungen, Verkehrsanteile, Verkehrsbelastung
 - **Zeitliche Analyse** mit wöchentlichen und stündlichen Verkehrsmustern
 - **Animierte Verkehrsverläufe** mit Play/Pause-Funktionalität
 
-### 🏗️ Projekteinrichtung
+### Projekteinrichtung
 - **Excel-Upload** für Bauzeitpläne (Material_Lieferungen.csv)
 - **GeoJSON-Konfiguration** für Baustellenpolygone und Zufahrtsrouten
 - **Verkehrszählstellen-Management** mit CSV-Import
 - **Liefertage und -zeiten** Konfiguration
 - **Automatische Koordinatenverarbeitung** und Geocoding
 
-### ⚙️ Admin-Panel
+### Admin-Panel
 - **Projektbearbeitung** und Datenverwaltung
 - **Excel-Aktualisierung** mit Validierung
 - **Simulationseinstellungen** und -ausführung
 - **Datenexport** und Berichtserstellung
 
-### 🏠 Anwohner-Information
+### Anwohner-Information
 - **Vereinfachte Verkehrsübersicht** für betroffene Anwohner
 - **Wochenübersicht** mit Verkehrsstatus (Niedrig/Mäßig/Stark)
 - **Bauzeitplan-Integration** mit Material- und Personalprognosen
@@ -59,7 +59,7 @@ Das Baustellenverkehrs-Management-System (VDSS - Verkehrsdaten-Simulations-Syste
 ### PDF & Berichte
 - **ReportLab** - PDF-Generierung für Berichte
 
-## 📁 Projektstruktur
+## Projektstruktur
 
 ```
 VDSS/
@@ -95,7 +95,7 @@ VDSS/
 └── requirements.txt         # Python-Abhängigkeiten
 ```
 
-## 🚀 Installation und Ausführung
+## Installation und Ausführung
 
 ### Voraussetzungen
 - Python 3.8+
@@ -133,7 +133,7 @@ python run.py frontend  # Nur Streamlit (Port 8501)
 
 Die Anwendung öffnet sich automatisch unter `http://localhost:8501`
 
-## 📊 Verkehrssimulations-Logik
+## Verkehrssimulations-Logik
 
 ### 1. Datengrundlage
 
@@ -205,7 +205,7 @@ congestion_level = min(1.0, simulated_volume / segment_capacity)
 - Gelb (0.3-0.7): Mäßiger Verkehr  
 - Rot (0.7-1.0): Starker Verkehr/Stau
 
-## 🗂️ Datenformate
+## Datenformate
 
 ### Excel-Bauzeitplan (Material_Lieferungen.csv)
 ```csv
@@ -227,7 +227,7 @@ Monday,1,8,245
 Monday,1,9,378
 ```
 
-## 🎛️ Konfiguration
+## Konfiguration
 
 ### Projekt-Setup
 1. **Excel-Upload**: Bauzeitplan mit Material, Personal, Terminen
@@ -261,7 +261,7 @@ GET  /api/simulation/results  # Ergebnisse abrufen
 POST /api/export/pdf          # PDF-Bericht generieren
 ```
 
-## 🎨 Benutzeroberfläche
+## Benutzeroberfläche
 
 ### Design-Prinzipien
 - **Deutsche Lokalisierung**: Vollständig deutschsprachige Oberfläche
@@ -275,7 +275,7 @@ POST /api/export/pdf          # PDF-Bericht generieren
 - **Karten-Legende**: Überlagerung mit Bereichen und Verkehrsstatus
 - **Diagramme**: Plotly mit deutscher Lokalisierung
 
-## 🔍 Debug & Monitoring
+## Debug & Monitoring
 
 ### Debug-Modi
 ```python
@@ -288,7 +288,7 @@ DEBUG_OSM = False     # OSM-Daten-Abruf
 - **Profil-Cache**: Session-basiert für Verkehrszählstellen
 - **Wochen-Cache**: `traffic_data_week_{year}_{week}_{project_id}`
 
-## 📈 Erweiterbarkeit
+## Erweiterbarkeit
 
 ### Modulare Architektur
 - **Seiten-Module**: Unabhängige Streamlit-Pages
