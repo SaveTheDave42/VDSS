@@ -48,7 +48,7 @@ def show_project_setup():
     apply_custom_styles()
     apply_chart_styling()
     
-    st.markdown("<h2 style='text-align: center;'>Project Setup</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Projekteinrichtung</h2>", unsafe_allow_html=True)
 
     # Set initial map state for project setup page - empty map
     if st.session_state.get('page') == "project_setup" and "project_setup_map_initialized" not in st.session_state:
@@ -64,27 +64,27 @@ def show_project_setup():
         st.session_state.project_setup_map_initialized = True
     
     tab1, tab2, tab3 = st.tabs([
-        "1. Project Details & Counters", 
-        "2. Upload Activity File", 
-        "3. Upload GeoJSON Data"
+        "1. Projektdetails & Zählstellen", 
+        "2. Aktivitätsdatei hochladen", 
+        "3. GeoJSON-Daten hochladen"
     ])
     
     with tab1:
-        st.subheader("Define Project Name")
-        project_name = st.text_input("Project Name", value=st.session_state.get("project_name", ""), key="project_name_input", help="Press Enter or click away to set project name")
+        st.subheader("Projektname definieren")
+        project_name = st.text_input("Projektname", value=st.session_state.get("project_name", ""), key="project_name_input", help="Drücken Sie Enter oder klicken Sie weg, um den Projektnamen festzulegen")
         
         if project_name and project_name != st.session_state.get("project_name", ""):
             try:
                 response = requests.get(f"{API_URL}/api/projects/check_name/{project_name}")
                 if response.status_code == 200 and response.json().get("exists", False):
-                    st.error(f"A project with the name '{project_name}' already exists. Please choose a different name.")
+                    st.error(f"Ein Projekt mit dem Namen '{project_name}' existiert bereits. Bitte wählen Sie einen anderen Namen.")
                     st.session_state.project_name_valid = False
                 else:
-                    st.success(f"Project name '{project_name}' is available!")
+                    st.success(f"Projektname '{project_name}' ist verfügbar!")
                     st.session_state.project_name = project_name
                     st.session_state.project_name_valid = True
             except Exception as e:
-                st.warning(f"Could not verify project name uniqueness: {e}. Assuming available.")
+                st.warning(f"Eindeutigkeit des Projektnamens konnte nicht überprüft werden: {e}. Gehe davon aus, dass er verfügbar ist.")
                 st.session_state.project_name = project_name
                 st.session_state.project_name_valid = True # Proceed with caution
         elif not project_name:
@@ -92,14 +92,14 @@ def show_project_setup():
         
         if st.session_state.get("project_name_valid", False):
             st.markdown("---")
-            st.subheader("Delivery Days and Hours")
+            st.subheader("Liefertage und -zeiten")
 
             if not st.session_state.get("project_name_valid", False):
-                st.info("Project name not yet validated – you can still choose days/hours now; they will be saved once the name is confirmed.")
+                st.info("Projektname noch nicht validiert – Sie können trotzdem schon Tage/Zeiten wählen; sie werden gespeichert, sobald der Name bestätigt ist.")
 
             weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
             selected_days = st.multiselect(
-                "Delivery Days",
+                "Liefertage",
                 options=weekdays,
                 default=st.session_state.get("delivery_days", weekdays[:-1]),
                 key="delivery_days_multiselect",
@@ -111,7 +111,7 @@ def show_project_setup():
             
             # First column - Delivery from
             st.markdown("<div style='width: 48%;'>", unsafe_allow_html=True)
-            st.markdown("<small><b>Delivery from</b></small>", unsafe_allow_html=True)
+            st.markdown("<small><b>Lieferung von</b></small>", unsafe_allow_html=True)
             default_start_time = st.session_state.get("delivery_hours", {}).get("start", time(7, 0))
             start_time = st.time_input(
                 label="",
@@ -123,7 +123,7 @@ def show_project_setup():
             
             # Second column - Delivery until  
             st.markdown("<div style='width: 48%;'>", unsafe_allow_html=True)
-            st.markdown("<small><b>Delivery until</b></small>", unsafe_allow_html=True)
+            st.markdown("<small><b>Lieferung bis</b></small>", unsafe_allow_html=True)
             default_end_time = st.session_state.get("delivery_hours", {}).get("end", time(17, 0))
             end_time = st.time_input(
                 label="",
@@ -139,13 +139,13 @@ def show_project_setup():
 
             # Guard: only enable further sections/actions once project_name is validated
             if not st.session_state.get("project_name_valid", False):
-                st.info("Validate project name above to proceed with counting stations and uploads.")
+                st.info("Validieren Sie den Projektnamen oben, um mit Zählstellen und Uploads fortzufahren.")
                 st.stop()
 
             st.markdown("---")
-            st.subheader("Traffic Counting Stations")
-            with st.expander("ℹ️ Info on Counting Stations"):
-                st.markdown("Select relevant traffic counting stations. Data from these stations will be used for traffic analysis. [View stations on Zurich City Map](https://www.stadtplan.stadt-zuerich.ch/zueriplan3/stadtplan.aspx#route_visible=true&basemap=Basiskarte+(Geb%C3%A4udeschr%C3%A4gansicht)&map=&scale=8000&xkoord=2680153.2835917696&ykoord=1248850.403632357&lang=&layer=Z%C3%A4hlstelle+MIV%3A%3A0&window=&selectedObject=&selectedLayer=&toggleScreen=&legacyUrlState=&drawings=)")
+            st.subheader("Verkehrszählstellen")
+            with st.expander("ℹ️ Info zu Zählstellen"):
+                st.markdown("Wählen Sie relevante Verkehrszählstellen aus. Daten von diesen Stationen werden für die Verkehrsanalyse verwendet. [Stationen auf Zürich Stadtplan anzeigen](https://www.stadtplan.stadt-zuerich.ch/zueriplan3/stadtplan.aspx#route_visible=true&basemap=Basiskarte+(Geb%C3%A4udeschr%C3%A4gansicht)&map=&scale=8000&xkoord=2680153.2835917696&ykoord=1248850.403632357&lang=&layer=Z%C3%A4hlstelle+MIV%3A%3A0&window=&selectedObject=&selectedLayer=&toggleScreen=&legacyUrlState=&drawings=)")
 
             @st.cache_data(ttl=3600)
             def load_counting_stations_data(): # Renamed to avoid conflict if other pages use similar names
@@ -175,10 +175,10 @@ def show_project_setup():
                 
                 # Display counters on the map (optional)
                 # This could be an enhancement - adding counter markers to the background map
-                st.info("Counting station selection is done via dropdowns. Stations can also be shown on the map.")
+                st.info("Die Auswahl der Zählstellen erfolgt über Dropdown-Menüs. Stationen können auch auf der Karte angezeigt werden.")
 
                 station_options = {s['display_name']: s for s in counting_stations}
-                primary_station_disp_name = st.selectbox("Primary Counting Station", options=list(station_options.keys()), 
+                primary_station_disp_name = st.selectbox("Primäre Zählstation", options=list(station_options.keys()), 
                                                        index=list(station_options.keys()).index(st.session_state.primary_counter['display_name']) if st.session_state.primary_counter else 0)
                 if primary_station_disp_name:
                     st.session_state.primary_counter = station_options[primary_station_disp_name]
@@ -194,7 +194,7 @@ def show_project_setup():
                 elif st.session_state.selected_counters: # if no primary counter yet, all selected are secondary for this selection step
                     current_secondary_disp_names = [s['display_name'] for s in st.session_state.selected_counters]
 
-                secondary_station_disp_names = st.multiselect("Secondary Counting Stations (up to 3)", options=list(secondary_opts_dict.keys()), default=current_secondary_disp_names, max_selections=3)
+                secondary_station_disp_names = st.multiselect("Sekundäre Zählstationen (bis zu 3)", options=list(secondary_opts_dict.keys()), default=current_secondary_disp_names, max_selections=3)
                 
                 temp_selected_counters = []
                 if st.session_state.primary_counter: temp_selected_counters.append(st.session_state.primary_counter)
@@ -209,22 +209,22 @@ def show_project_setup():
                     # Ensure load_traffic_profiles and the preview table generation are still functional.
                     pass # Placeholder for existing profile preview logic
             else:
-                st.error("Counting stations data not available. Please check 'data/prepared/counters.csv'.")
+                st.error("Zählstellendaten nicht verfügbar. Bitte überprüfen Sie 'data/prepared/counters.csv'.")
         else:
-            st.info("Please enter a valid and available project name to proceed.")
+            st.info("Bitte geben Sie einen gültigen und verfügbaren Projektnamen ein, um fortzufahren.")
 
     with tab2: # Upload File
-        st.subheader("Upload Construction Activity File")
+        st.subheader("Bauaktivitätsdatei hochladen")
         if not st.session_state.get("project_name_valid", False):
-            st.info("Please define a project name in the first step.")
+            st.info("Bitte definieren Sie einen Projektnamen im ersten Schritt.")
         else:
             # ... (Keep existing file upload logic for CSV/Excel, validation, and preview) ...
             # This part should remain as is, since it's about data processing, not map display.
-            st.markdown("If you have an Excel or CSV file with columns: `Vorgangsname`, `Anfangstermin`, `Endtermin`, `Material`, upload it here.")
+            st.markdown("Wenn Sie eine Excel- oder CSV-Datei mit den Spalten: `Vorgangsname`, `Anfangstermin`, `Endtermin`, `Material` haben, laden Sie sie hier hoch.")
             if "truck_divisor" not in st.session_state: st.session_state.truck_divisor = 20
-            divisor = st.number_input("Material quantity per truck", value=st.session_state.truck_divisor, min_value=1)
+            divisor = st.number_input("Materialmenge pro LKW", value=st.session_state.truck_divisor, min_value=1)
             st.session_state.truck_divisor = divisor
-            uploaded_file = st.file_uploader("Upload activity file", type=["csv", "xlsx"], key="activity_file_uploader")
+            uploaded_file = st.file_uploader("Aktivitätsdatei hochladen", type=["csv", "xlsx"], key="activity_file_uploader")
             if uploaded_file:
                 try:
                     df = pd.read_excel(uploaded_file) if uploaded_file.name.endswith('xlsx') else pd.read_csv(uploaded_file)
@@ -237,7 +237,7 @@ def show_project_setup():
                     missing_cols = [rc for rc in required_cols if rc not in col_mapping.values()]
 
                     if missing_cols:
-                        st.error(f"Missing required columns: {', '.join(missing_cols)}. Please ensure your file has: Vorgangsname, Anfangstermin, Endtermin, Material.")
+                        st.error(f"Fehlende erforderliche Spalten: {', '.join(missing_cols)}. Bitte stellen Sie sicher, dass Ihre Datei folgende Spalten hat: Vorgangsname, Anfangstermin, Endtermin, Material.")
                     else:
                         df_std = df.rename(columns=col_mapping)
                         df_std['anfangstermin'] = pd.to_datetime(df_std['anfangstermin'])
@@ -247,21 +247,21 @@ def show_project_setup():
                         st.dataframe(df_std.head())
                         st.session_state.processed_df = df_std # Store for final creation step
                         st.session_state.excel_file = uploaded_file # Store original file object for API
-                        st.success("File processed successfully.")
+                        st.success("Datei erfolgreich verarbeitet.")
                 except Exception as e:
-                    st.error(f"Error processing file: {e}")
+                    st.error(f"Fehler beim Verarbeiten der Datei: {e}")
 
     with tab3: # Upload GeoJSON
-        st.subheader("Upload GeoJSON Data")
+        st.subheader("GeoJSON-Daten hochladen")
         if not st.session_state.get("project_name_valid", False) or not st.session_state.get("excel_file"):
-            st.info("Please complete project name and activity file upload in previous steps.")
+            st.info("Bitte vervollständigen Sie Projektname und Aktivitätsdatei-Upload in den vorherigen Schritten.")
         else:
-            st.markdown("Upload GeoJSON files for: Construction Site (Polygon), Access Route(s) (LineString/MultiLineString), Waiting Area(s) (Polygon/MultiPolygon), and Map Bounds (Polygon).")
+            st.markdown("Laden Sie GeoJSON-Dateien hoch für: Baustelle (Polygon), Zufahrtsroute(n) (LineString/MultiLineString), Wartebereiche (Polygon/MultiPolygon) und Kartengrenzen (Polygon).")
             
-            construction_site_file = st.file_uploader("Construction Site GeoJSON", type=["json", "geojson"], key="geojson_site")
-            routes_file = st.file_uploader("Access Route(s) GeoJSON", type=["json", "geojson"], key="geojson_routes")
-            waiting_areas_file = st.file_uploader("Waiting Area(s) GeoJSON", type=["json", "geojson"], key="geojson_waiting")
-            map_bounds_file = st.file_uploader("Map Bounds GeoJSON", type=["json", "geojson"], key="geojson_bounds")
+            construction_site_file = st.file_uploader("Baustelle GeoJSON", type=["json", "geojson"], key="geojson_site")
+            routes_file = st.file_uploader("Zufahrtsroute(n) GeoJSON", type=["json", "geojson"], key="geojson_routes")
+            waiting_areas_file = st.file_uploader("Wartebereiche GeoJSON", type=["json", "geojson"], key="geojson_waiting")
+            map_bounds_file = st.file_uploader("Kartengrenzen GeoJSON", type=["json", "geojson"], key="geojson_bounds")
 
             # Process and temporarily store uploaded GeoJSON data
             # When construction_site_file is uploaded, update map view and layer
@@ -292,9 +292,9 @@ def show_project_setup():
                         pickable=True, 
                         tooltip_html="<b>{properties.name}</b>"
                     )]
-                    st.success("Construction site GeoJSON loaded and map updated.")
+                    st.success("Baustellen-GeoJSON geladen und Karte aktualisiert.")
                 except Exception as e:
-                    st.error(f"Error processing Construction Site GeoJSON: {e}")
+                    st.error(f"Fehler beim Verarbeiten der Baustellen-GeoJSON: {e}")
                     st.session_state.map_layers = [] # Clear layers on error
             
             if routes_file: 
@@ -330,15 +330,15 @@ def show_project_setup():
                                 line_color=[40, 167, 69, 255],
                                 line_width_min_pixels=3,
                                 pickable=True,
-                                tooltip_html="<b>Access Route</b>",
+                                tooltip_html="<b>Zufahrtsroute</b>",
                                 filled=False, # Lines aren't filled
                                 stroked=True
                             )
                             # Add to existing layers
                             st.session_state.map_layers.append(routes_layer)
-                            st.success("Access routes added to map preview.")
+                            st.success("Zufahrtsrouten zur Kartenvorschau hinzugefügt.")
                 except Exception as e:
-                    st.error(f"Error processing Access Routes GeoJSON: {e}")
+                    st.error(f"Fehler beim Verarbeiten der Zufahrtsrouten-GeoJSON: {e}")
             
             if waiting_areas_file: 
                 try:
@@ -372,13 +372,13 @@ def show_project_setup():
                                 fill_color=[0, 123, 255, 160], # Blueish
                                 line_color=[0, 123, 255, 255],
                                 pickable=True,
-                                tooltip_html="<b>Waiting Area</b>"
+                                tooltip_html="<b>Wartebereich</b>"
                             )
                             # Add to existing layers
                             st.session_state.map_layers.append(waiting_layer)
-                            st.success("Waiting areas added to map preview.")
+                            st.success("Wartebereiche zur Kartenvorschau hinzugefügt.")
                 except Exception as e:
-                    st.error(f"Error processing Waiting Areas GeoJSON: {e}")
+                    st.error(f"Fehler beim Verarbeiten der Wartebereiche-GeoJSON: {e}")
             
             if map_bounds_file: 
                 try:
@@ -406,13 +406,13 @@ def show_project_setup():
                                 line_color=[108, 117, 125, 200],
                                 pickable=True,
                                 line_width_min_pixels=2,
-                                tooltip_html="<b>Map Display Bounds</b>"
+                                tooltip_html="<b>Kartenanzeigegrenzen</b>"
                             )
                             # Add to existing layers
                             st.session_state.map_layers.append(bounds_layer)
-                            st.success("Map bounds added to preview.")
+                            st.success("Kartengrenzen zur Vorschau hinzugefügt.")
                 except Exception as e:
-                    st.error(f"Error processing Map Bounds GeoJSON: {e}")
+                    st.error(f"Fehler beim Verarbeiten der Kartengrenzen-GeoJSON: {e}")
                 
             all_setup_files_loaded = all([
                 st.session_state.get("project_name_valid"),
@@ -424,10 +424,10 @@ def show_project_setup():
             ])
 
             if all_setup_files_loaded:
-                if st.button("Create Project", key="create_project_button"):
+                if st.button("Projekt erstellen", key="create_project_button"):
                     create_project_from_session_state() # Call a helper to finalize
             else:
-                st.warning("Please upload all required GeoJSON files and ensure previous steps are complete.")
+                st.warning("Bitte laden Sie alle erforderlichen GeoJSON-Dateien hoch und stellen Sie sicher, dass die vorherigen Schritte vollständig sind.")
 
 # Helper for project creation (moved from original create_project for clarity)
 def create_project_from_session_state():
@@ -492,7 +492,7 @@ def create_project_from_session_state():
         
         if response.status_code == 200:
             project_data = response.json()
-            st.success(f"Project '{project_data['name']}' created successfully!")
+            st.success(f"Projekt '{project_data['name']}' erfolgreich erstellt!")
             st.session_state.current_project = project_data
             st.session_state.page = "admin" # Navigate to admin page for the new project
             st.session_state.projects = [] # Force refresh of project list from sidebar
@@ -510,9 +510,9 @@ def create_project_from_session_state():
                 if key in st.session_state: del st.session_state[key]
             st.rerun()
         else:
-            st.error(f"Failed to create project: {response.status_code} - {response.text}")
+            st.error(f"Projekt konnte nicht erstellt werden: {response.status_code} - {response.text}")
     except Exception as e:
-        st.error(f"Error during project creation: {str(e)}")
+        st.error(f"Fehler beim Erstellen des Projekts: {str(e)}")
         import traceback
         st.error(f"Traceback: {traceback.format_exc()}")
 

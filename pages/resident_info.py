@@ -31,7 +31,7 @@ def show_resident_info(project):
     # Apply chart styling for this page
     apply_chart_styling()
     
-    st.markdown(f"<h2 style='text-align: center;'>Construction Site Traffic Information</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align: center;'>Baustellenverkehr Informationen</h2>", unsafe_allow_html=True)
     st.markdown(f"<h3 style='text-align: center;'>{project['name']}</h3>", unsafe_allow_html=True)
     
     # Center map view on project bounds
@@ -49,7 +49,7 @@ def show_resident_info(project):
     # Pre-compute base OSM segments once
     base_osm_segments = _dash.get_base_osm_segments(project)
     if not base_osm_segments:
-        st.warning("No traffic data available yet. Please check back later.")
+        st.warning("Noch keine Verkehrsdaten verfügbar. Bitte schauen Sie später noch einmal vorbei.")
         st.session_state.map_layers = []
         return
     
@@ -73,7 +73,7 @@ def show_resident_info(project):
     if current_week_key not in st.session_state:
         st.session_state[current_week_key] = None
     
-    selected_week_dict = st.selectbox("Select Week", options=week_options, index=default_week_index, 
+    selected_week_dict = st.selectbox("Woche auswählen", options=week_options, index=default_week_index, 
                                       format_func=lambda x: x["label"], key="week_resident_ctrl")
     
     selected_week_id = f"{selected_week_dict['year']}_{selected_week_dict['week']}"
@@ -97,7 +97,7 @@ def show_resident_info(project):
             max_date = datetime.fromisoformat(project["dates"]["end_date"]).date()
 
     selected_date_for_map = st.date_input(
-        "Date",
+        "Datum",
         value=date.today(),
         min_value=min_date,
         max_value=max_date,
@@ -107,7 +107,7 @@ def show_resident_info(project):
     selected_date_str = selected_date_for_map.strftime("%Y-%m-%d")
     
     # 2. Traffic condition warning panel (Daily Traffic Conditions)
-    st.markdown("<h3>Daily Traffic Conditions</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>Tägliche Verkehrslage</h3>", unsafe_allow_html=True)
     
     # ---- Obtain hourly traffic data via dashboard logic ----
     delivery_hours_cfg = project.get("delivery_hours", {})
@@ -131,26 +131,26 @@ def show_resident_info(project):
     congestion_level = hour_data["stats"]["average_congestion"]
     
     if congestion_level < 0.3:
-        status = "Low Traffic"
+        status = "Wenig Verkehr"
         color = "green"
     elif congestion_level < 0.7:
-        status = "Moderate Traffic"
+        status = "Mässiger Verkehr"
         color = "orange"
     else:
-        status = "Heavy Traffic"
+        status = "Starker Verkehr"
         color = "red"
     
     # Show status card
     st.markdown(f"""
     <div style="padding: 20px; border-radius: 10px; background-color: {color}; color: white; text-align: center; margin-bottom: 20px;">
         <h3 style="margin: 0;">{status}</h3>
-        <p style="margin: 10px 0 0 0;">Current traffic level around the construction site</p>
+        <p style="margin: 10px 0 0 0;">Aktuelle Verkehrslage rund um die Baustelle</p>
     </div>
     """, unsafe_allow_html=True)
     
     # Hour slider to select which hour to visualise
     selected_hour_for_map = st.slider(
-        "Hour",
+        "Stunde",
         min_value=start_hour_int,
         max_value=end_hour_int,
         value=closest_hour,
@@ -188,7 +188,7 @@ def show_resident_info(project):
     # 1. Project Polygon Layer
     project_polygon_data = project.get("polygon", {})
     if "coordinates" in project_polygon_data and project_polygon_data["coordinates"]:
-        polygon_feature = create_geojson_feature(project_polygon_data, {"name": "Construction Site"})
+        polygon_feature = create_geojson_feature(project_polygon_data, {"name": "Baustelle"})
         polygon_layer = create_pydeck_geojson_layer(
             data=[polygon_feature], 
             layer_id="resident_project_polygon", 
@@ -197,7 +197,7 @@ def show_resident_info(project):
             get_line_width=20,
             line_width_min_pixels=2,
             pickable=True, 
-            tooltip_html="<b>Construction Site</b><br/>{properties.name}"
+            tooltip_html="<b>Baustelle</b><br/>{properties.name}"
         )
         layers_for_pydeck.append(polygon_layer)
     
@@ -229,8 +229,8 @@ def show_resident_info(project):
             
             segments_data.append({
                 "path": segment.get("coordinates", []),
-                "name": segment.get("name", "Road"),
-                "highway_type": segment.get("highway_type", "Unknown"),
+                "name": segment.get("name", "Strasse"),
+                "highway_type": segment.get("highway_type", "Unbekannt"),
                 "traffic_volume": segment.get("traffic_volume", 0),
                 "congestion": congestion,
                 "color": color,
@@ -243,7 +243,7 @@ def show_resident_info(project):
                 data=segments_data,
                 layer_id="resident_traffic_paths",
                 pickable=True,
-                tooltip_html="<b>{name}</b><br/>Volume: {traffic_volume}<br/>Congestion: {congestion:.2f}"
+                tooltip_html="<b>{name}</b><br/>Volumen: {traffic_volume}<br/>Belastung: {congestion:.2f}"
             )
             layers_for_pydeck.append(traffic_layer)
     
@@ -285,7 +285,7 @@ def get_simulation_data(project_id):
             print(f"API request failed: {str(e)}")  # Log to console instead of UI
         
         # Wenn API-Anfrage fehlschlägt oder leere Daten zurückgibt, synthetische Daten erzeugen
-        st.info("Using synthetic data for visualization (API data not available).")
+        st.info("Verwende synthetische Daten für die Visualisierung (API-Daten nicht verfügbar).")
         synthetic_data = {}
         
         # Generate data for the last 7 days and next 7 days
@@ -318,7 +318,7 @@ def get_simulation_data(project_id):
                                 [8.54 + (j % 3) * 0.005, 47.375 + (j // 3) * 0.005],
                                 [8.54 + (j % 3) * 0.005 + 0.002, 47.375 + (j // 3) * 0.005 + 0.002]
                             ],
-                            "name": f"Road {j}"
+                            "name": f"Strasse {j}"
                         } for j in range(10)  # 10 road segments
                     ],
                     "waiting_areas_status": {
@@ -341,7 +341,7 @@ def get_simulation_data(project_id):
         return synthetic_data
     
     except Exception as e:
-        st.error(f"Error getting simulation data: {str(e)}")
+        st.error(f"Fehler beim Abrufen der Simulationsdaten: {str(e)}")
         return None
 
 def create_geojson_feature(geometry, properties=None):

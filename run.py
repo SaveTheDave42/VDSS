@@ -7,12 +7,12 @@ from threading import Thread
 
 def run_backend():
     """Run the FastAPI backend server"""
-    print("Starting FastAPI backend...")
+    print("FastAPI Backend wird gestartet...")
     subprocess.run([sys.executable, "-m", "uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"])
 
 def run_frontend():
     """Run the Streamlit frontend"""
-    print("Starting Streamlit frontend...")
+    print("Streamlit Frontend wird gestartet...")
     subprocess.run([sys.executable, "-m", "streamlit", "run", "streamlit_app.py"])
 
 def open_browser():
@@ -33,8 +33,8 @@ if __name__ == "__main__":
         elif sys.argv[1].lower() == "frontend":
             run_frontend()
         else:
-            print(f"Unknown argument: {sys.argv[1]}")
-            print("Usage: python run.py [backend|frontend]")
+            print(f"Unbekanntes Argument: {sys.argv[1]}")
+            print("Verwendung: python run.py [backend|frontend]")
     else:
         # Run both in separate threads
         backend_thread = Thread(target=run_backend)
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         frontend_thread.daemon = True
 
         
-        print("Starting Construction Site Traffic Management System...")
+        print("Baustellenverkehrs-Management-System wird gestartet...")
         
         backend_thread.start()
         time.sleep(2)  # Give backend time to start before frontend
@@ -56,6 +56,6 @@ if __name__ == "__main__":
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("\nShutting down...")
+            print("\nSystem wird heruntergefahren...")
         finally:
-            print("Application stopped.") 
+            print("Anwendung gestoppt.") 

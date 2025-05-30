@@ -126,8 +126,8 @@ def build_segments_for_hour(hour, project, base_osm_segments, date_str, get_traf
 
         segments_data.append({
             "path": segment.get("coordinates", []),
-            "name": segment.get("name", "Road"),
-            "highway_type": segment.get("highway_type", "Unknown"),
+            "name": segment.get("name", "Strasse"),
+            "highway_type": segment.get("highway_type", "Unbekannt"),
             "traffic_volume": segment.get("traffic_volume", 0),
             "congestion": congestion,
             "color": color,
@@ -168,7 +168,7 @@ def render_hourly_traffic_component(hourly_segments: dict, initial_view_state: d
     html_str = f"""
     <div id=\"map\" style=\"height:{height-50}px;border-radius:8px;\"></div>
     <div style=\"margin-top:6px; display:flex; gap:8px; align-items:center;\">
-      <button id=\"playBtn\">Play</button>
+      <button id=\"playBtn\">Abspielen</button>
       <input type=\"range\" id=\"hourSlider\" min=\"{start_hour}\" max=\"{end_hour}\" value=\"{start_hour}\" step=\"1\" style=\"flex:1;\">
       <span id=\"hourLabel\" style=\"width:55px;text-align:right;\">{start_hour:02d}:00</span>
     </div>
@@ -211,7 +211,7 @@ def render_hourly_traffic_component(hourly_segments: dict, initial_view_state: d
     let timer;
     document.getElementById('playBtn').onclick = () => {{
       playing = !playing;
-      document.getElementById('playBtn').innerText = playing ? 'Pause' : 'Play';
+      document.getElementById('playBtn').innerText = playing ? 'Pause' : 'Abspielen';
       if (playing) {{
         timer = setInterval(() => {{
           setHour(currHour < {end_hour} ? currHour + 1 : {start_hour});

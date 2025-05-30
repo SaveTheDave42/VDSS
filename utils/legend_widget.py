@@ -39,9 +39,9 @@ def show_legend_widget(current_page, show_geojson_layers=False):
     if show_geojson or current_page in ["dashboard", "resident_info"]:
         legend_html += (
             "<div class='sec'>"
-            "<span class='title'>Areas:</span>"
-            "<span class='item'><span class='box' style='background:rgba(70,130,180,0.63)'></span>Construction Site</span>"
-            "<span class='item'><span class='box' style='background:rgba(148,0,211,0.3)'></span>Access Route</span>"
+            "<span class='title'>Bereiche:</span>"
+            "<span class='item'><span class='box' style='background:rgba(70,130,180,0.63)'></span>Baustelle</span>"
+            "<span class='item'><span class='box' style='background:rgba(148,0,211,0.3)'></span>Zufahrtsroute</span>"
             "</div>"
         )
         if show_traffic:
@@ -51,10 +51,10 @@ def show_legend_widget(current_page, show_geojson_layers=False):
     if show_traffic:
         legend_html += (
             "<div class='sec'>"
-            "<span class='title'>Traffic:</span>"
-            "<span class='item'><span class='box' style='background:rgba(40,167,69,0.71)'></span>Low</span>"
-            "<span class='item'><span class='box' style='background:rgba(255,193,7,0.71)'></span>Medium</span>"
-            "<span class='item'><span class='box' style='background:rgba(220,53,69,0.71)'></span>High</span>"
+            "<span class='title'>Verkehrsaufkommen:</span>"
+            "<span class='item'><span class='box' style='background:rgba(40,167,69,0.71)'></span>Niedrig</span>"
+            "<span class='item'><span class='box' style='background:rgba(255,193,7,0.71)'></span>Mittel</span>"
+            "<span class='item'><span class='box' style='background:rgba(220,53,69,0.71)'></span>Hoch</span>"
             "</div>"
         )
     

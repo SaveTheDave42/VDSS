@@ -66,7 +66,7 @@ ENABLE_ANIMATION = True
 
 def _render_traffic_tab(project):
     """Render the traffic dashboard tab content"""
-    st.markdown("<h2 style='text-align: center;'>Traffic Dashboard</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Verkehrs-Dashboard</h2>", unsafe_allow_html=True)
     
     # Session state checks and data loading
     if "selected_counters" not in st.session_state and "selected_counters" in project:
@@ -114,8 +114,8 @@ def _render_traffic_tab(project):
         load_profiles_for_counters(project)
     
     if "counter_profiles" not in st.session_state or not st.session_state.counter_profiles:
-        st.warning("No traffic counting stations selected or profiles could not be loaded. Please go to Project Setup.")
-        if st.button("Go to Project Setup"):
+        st.warning("Keine Verkehrszählstellen ausgewählt oder Profile konnten nicht geladen werden. Bitte gehen Sie zur Projekteinrichtung.")
+        if st.button("Zur Projekteinrichtung"):
             st.session_state.page = "project_setup"
             st.rerun()
         return
@@ -132,14 +132,14 @@ def _render_traffic_tab(project):
 
     # Ensure project data is available
     if not project or "id" not in project:
-        st.error("Project data is not loaded correctly.")
+        st.error("Projektdaten sind nicht korrekt geladen.")
         st.session_state.map_layers = [] # Clear map layers
         return
 
     # Get base OSM segments (cached or fetched)
     base_osm_segments = get_base_osm_segments(project)
     if not base_osm_segments and DEBUG_OSM: # Only show warning if in debug, otherwise it might be alarming
-        st.warning("OSM: No base OSM segments could be generated. Map may not show traffic routes.")
+        st.warning("OSM: Keine OSM-Basissegmente konnten generiert werden. Karte zeigt möglicherweise keine Verkehrswege.")
 
     # Initialize animation state
     # Ensure animation is turned off when the feature flag is disabled
@@ -169,7 +169,7 @@ def _render_traffic_tab(project):
             max_date = datetime.fromisoformat(project["dates"]["end_date"]).date()
 
     selected_date_for_map = st.date_input(
-        "Date",
+        "Datum",
         value=date.today(),
         min_value=min_date,
         max_value=max_date,
@@ -253,7 +253,7 @@ def _render_traffic_tab(project):
 
     # Smooth hour selection slider bound directly to session state.
     selected_hour_for_map = st.slider(
-        "Hour",
+        "Stunde",
         min_value=start_hour,
         max_value=end_hour,
         value=st.session_state.get("sel_hour", start_hour),
@@ -313,24 +313,87 @@ def _render_traffic_tab(project):
     # Apply KPI styles (reusable)
     apply_kpi_styles()
 
-    # Render the three KPIs
+    # Render the three KPIs with tooltips
     kpi_html = f"""
-    <div class=\"kpi-wrapper\">
-        <div class=\"kpi-card\"><h4>Total Deliveries (Day)</h4><p>{total_deliveries_day}</p></div>
-        <div class=\"kpi-card\"><h4>Deliveries % of Traffic</h4><p>{delivery_share_pct:.1f}%</p></div>
-        <div class=\"kpi-card\"><h4>Avg. Congestion</h4><p>{avg_congestion_day:.2f}</p></div>
+    <div class="kpi-wrapper">
+        <div class="kpi-card" data-tooltip="Gesamtanzahl der Lieferungen für den ausgewählten Tag basierend auf dem Bauzeitplan">
+            <h4>Gesamtlieferungen (Tag)</h4><p>{total_deliveries_day}</p>
+        </div>
+        <div class="kpi-card" data-tooltip="Anteil der Lieferfahrzeuge am gesamten Verkehrsaufkommen in Prozent">
+            <h4>Lieferungen % des Verkehrs</h4><p>{delivery_share_pct:.1f}%</p>
+        </div>
+        <div class="kpi-card" data-tooltip="Durchschnittliche Verkehrsbelastung (0=frei, 1=Stau) über alle Strassensegmente">
+            <h4>Durchschn. Verkehrsbelastung</h4><p>{avg_congestion_day:.2f}</p>
+        </div>
     </div>
     """
 
     st.markdown(kpi_html, unsafe_allow_html=True)
 
-    # ---- NEW KPI card row ----
+    # ---- NEW KPI card row with tooltips ----
     additional_kpi_html = f"""
-    <div class=\"kpi-wrapper\">
-        <div class=\"kpi-card\"><h4>Access Traffic (Day)</h4><p>{access_traffic_day:.2f}</p></div>
-        <div class=\"kpi-card\"><h4>Construction Traffic</h4><p>{construction_traffic_day}</p></div>
-        <div class=\"kpi-card\"><h4>Construction Share</h4><p>{construction_share_pct_day:.1f}%</p></div>
+    <div class="kpi-wrapper">
+        <div class="kpi-card" data-tooltip="Verkehrsaufkommen auf den Zufahrtsstrassen zur Baustelle pro Tag">
+            <h4>Zufahrtsverkehr (Tag)</h4><p>{access_traffic_day:.2f}</p>
+        </div>
+        <div class="kpi-card" data-tooltip="Anzahl der Baustellenfahrzeuge basierend auf Material-Lieferungen">
+            <h4>Baustellenverkehr</h4><p>{construction_traffic_day}</p>
+        </div>
+        <div class="kpi-card" data-tooltip="Anteil des Baustellenverkehrs am gesamten Zufahrtsverkehr in Prozent">
+            <h4>Baustellenanteil</h4><p>{construction_share_pct_day:.1f}%</p>
+        </div>
     </div>
+    
+    <style>
+    /* Tooltip Styles */
+    .kpi-card {{
+        position: relative;
+        cursor: help;
+    }}
+    
+    .kpi-card::after {{
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 5, 160, 0.95);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1.3;
+        white-space: nowrap;
+        max-width: 250px;
+        white-space: normal;
+        text-align: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }}
+    
+    .kpi-card::before {{
+        content: '';
+        position: absolute;
+        bottom: 118%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: rgba(15, 5, 160, 0.95);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+        z-index: 1000;
+    }}
+    
+    .kpi-card:hover::after,
+    .kpi-card:hover::before {{
+        opacity: 1;
+        visibility: visible;
+    }}
+    </style>
     """
     st.markdown(additional_kpi_html, unsafe_allow_html=True)
 
@@ -406,7 +469,7 @@ def _render_traffic_tab(project):
     # 1. Project Polygon Layer
     project_polygon_data = project.get("polygon", {})
     if "coordinates" in project_polygon_data and project_polygon_data["coordinates"]:
-        polygon_feature = create_geojson_feature(project_polygon_data, {"name": "Construction Site"})
+        polygon_feature = create_geojson_feature(project_polygon_data, {"name": "Baustelle"})
         polygon_layer = create_pydeck_geojson_layer(
             data=[polygon_feature], 
             layer_id="dashboard_project_polygon", 
@@ -415,7 +478,7 @@ def _render_traffic_tab(project):
             get_line_width=20,
             line_width_min_pixels=2,
             pickable=True, 
-            tooltip_html="<b>Construction Site</b><br/>{properties.name}"
+            tooltip_html="<b>Baustelle</b><br/>{properties.name}"
         )
         layers_for_pydeck.append(polygon_layer)
 
@@ -1284,7 +1347,7 @@ def show_dashboard(project):
     apply_chart_styling()
     
     # --- Tab structure -------------------------------------------------
-    tab1, tab2, tab3 = st.tabs(["Traffic", "Construction Stats", "Other"])
+    tab1, tab2, tab3 = st.tabs(["Verkehr", "Baustellenstatistiken", "Andere"])
     
     with tab1:
         _render_traffic_tab(project)

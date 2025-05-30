@@ -26,7 +26,7 @@ if "widget_width_percent" not in st.session_state:
 # --- End Session State ---
 
 # Configure page
-st.set_page_config(layout="wide", page_title="Construction Site Traffic Management System")
+st.set_page_config(layout="wide", page_title="Baustellenverkehrs-Management-System")
 
 # Apply custom styles from our refactored module
 apply_custom_styles()
@@ -78,7 +78,7 @@ def load_sample_layer():
     }
     zurich_feature = create_geojson_feature_local(
         geometry=zurich_polygon_geojson,
-        properties={"name": "Zurich Area", "info": "Sample Polygon"}
+        properties={"name": "Zürich Gebiet", "info": "Beispiel-Polygon"}
     )
     sample_layer = create_pydeck_geojson_layer_local(
         data=[zurich_feature],
@@ -117,13 +117,13 @@ def render_background_map(placeholder_widget):
 # --- Create Sidebar for Project Selection and Navigation ---
 def create_sidebar():
     with st.sidebar:
-        st.title("Construction Site Traffic Management")
+        st.title("Baustellenverkehrs-Management")
         
         # Project selection
         if "projects" in st.session_state and st.session_state.projects:
             project_options = {p["name"]: p for p in st.session_state.projects}
             selected_project_name = st.selectbox(
-                "Select Project",
+                "Projekt auswählen",
                 options=list(project_options.keys()),
                 index=next((i for i, p in enumerate(project_options.keys()) 
                           if st.session_state.get("current_project") and 
@@ -159,26 +159,26 @@ def create_sidebar():
                 st.rerun()
         
         nav_button("Dashboard", "dashboard")
-        nav_button("Project Setup", "project_setup")
-        nav_button("Admin Panel", "admin")
-        nav_button("Resident Info", "resident_info")
+        nav_button("Projekteinrichtung", "project_setup")
+        nav_button("Admin-Panel", "admin")
+        nav_button("Anwohner-Info", "resident_info")
         
         st.sidebar.markdown("---")
         
         # Refresh button for projects
-        if st.sidebar.button("🔄 Refresh Projects", key="refresh_projects_btn"):
+        if st.sidebar.button("🔄 Projekte aktualisieren", key="refresh_projects_btn"):
             if refresh_projects():
-                st.success("Projects refreshed!")
+                st.success("Projekte aktualisiert!")
             # Force a rerun so that the updated project list is reflected in the
             # selectbox shown earlier in the sidebar.
             st.rerun()
         
         # Debug button
-        if st.sidebar.button("🔍 Debug Info"):
-            st.sidebar.write("Current Page:", st.session_state.get("page", "None"))
-            st.sidebar.write("Has Project:", "current_project" in st.session_state)
-            st.sidebar.write("Map Layers:", len(st.session_state.get("map_layers", [])))
-            st.sidebar.write("Widget Width:", st.session_state.get("widget_width_percent", "Not set"))
+        if st.sidebar.button("🔍 Debug-Info"):
+            st.sidebar.write("Aktuelle Seite:", st.session_state.get("page", "Keine"))
+            st.sidebar.write("Hat Projekt:", "current_project" in st.session_state)
+            st.sidebar.write("Karten-Layer:", len(st.session_state.get("map_layers", [])))
+            st.sidebar.write("Widget-Breite:", st.session_state.get("widget_width_percent", "Nicht gesetzt"))
 
 # --- Initialize Session State for Page Routing ---
 if "page" not in st.session_state:
@@ -214,7 +214,7 @@ with col_widget:
             if "current_project" in st.session_state:
                 page_module.show_dashboard(st.session_state.current_project)
             else:
-                st.info("Please select a project from the sidebar")
+                st.info("Bitte wählen Sie ein Projekt aus der Seitenleiste")
         
         elif current_page == "project_setup":
             import pages.project_setup as page_module
@@ -229,15 +229,15 @@ with col_widget:
             if "current_project" in st.session_state:
                 page_module.show_resident_info(st.session_state.current_project)
             else:
-                st.info("Please select a project from the sidebar")
+                st.info("Bitte wählen Sie ein Projekt aus der Seitenleiste")
         
         else:
-            st.error(f"Unknown page: {current_page}")
+            st.error(f"Unbekannte Seite: {current_page}")
     
     except ImportError as e:
-        st.error(f"Failed to import page module: {e}")
+        st.error(f"Fehler beim Importieren des Seitenmoduls: {e}")
     except Exception as e:
-        st.error(f"Error in page {current_page}: {e}")
+        st.error(f"Fehler auf Seite {current_page}: {e}")
         import traceback
         st.code(traceback.format_exc())
 
@@ -321,11 +321,11 @@ def refresh_projects():
             st.session_state.projects = response.json() or []
             return True
         else:
-            st.error(f"Failed to refresh projects: {response.status_code}")
+            st.error(f"Fehler beim Aktualisieren der Projekte: {response.status_code}")
             st.session_state.projects = []
             return False
     except Exception as exc:
-        st.error(f"Error connecting to API: {exc}")
+        st.error(f"Fehler beim Verbinden zur API: {exc}")
         st.session_state.projects = []
         return False
 
