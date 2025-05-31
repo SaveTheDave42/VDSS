@@ -73,7 +73,7 @@ VDSS/
 │   │   └── simulation.py    # Simulations-Datenstrukturen
 │   └── services/            # Business Logic
 │       └── simulation_service.py  # Verkehrssimulation
-├── pages/                   # Streamlit Seiten-Module
+├── modules/                   # Streamlit Seiten-Module
 │   ├── dashboard.py         # Haupt-Dashboard (1372 Zeilen)
 │   ├── project_setup.py     # Projekteinrichtung (567 Zeilen)
 │   ├── admin.py            # Admin-Panel (386 Zeilen)

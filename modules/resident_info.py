@@ -18,10 +18,10 @@ from utils.map_utils import (
 from utils.dashoboard_utils import build_segments_for_hour, build_hourly_layer_cache, render_hourly_traffic_component, get_week_options, get_days_in_week
 from utils.custom_styles import apply_chart_styling
 import streamlit.components.v1 as components
-import pages.dashboard as _dash
+import modules.dashboard as _dash
+from config import API_URL  # Import centralized config
 
-# Define API URL
-API_URL = "http://localhost:8000"
+# API_URL is now imported from config.py
 
 def show_resident_info(project):
     """Show the resident information page with simplified traffic information"""

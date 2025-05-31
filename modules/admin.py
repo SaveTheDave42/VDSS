@@ -10,14 +10,13 @@ import pydeck as pdk # Add PyDeck if specific types from it are needed, though h
 import plotly.express as px # Keep for other plots if any, though not used in current admin view
 from io import BytesIO
 from utils.map_utils import update_map_view_to_project_bounds
+from config import API_URL  # Import centralized config
 
 # Import helper functions from streamlit_app.py (conceptual import - they are globally available)
 # For a cleaner structure later, these could be in a utils.py file and imported explicitly.
 # from streamlit_app import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer
 
-API_URL = "http://localhost:8000"
-
-
+# API_URL is now imported from config.py
 
 def create_geojson_feature(geometry, properties=None):
     '''Wraps a GeoJSON geometry into a GeoJSON Feature structure.'''

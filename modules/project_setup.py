@@ -11,9 +11,9 @@ import math
 import holidays
 from utils.map_utils import update_map_view_to_project_bounds
 from utils.custom_styles import apply_custom_styles, apply_chart_styling
+from config import API_URL  # Import centralized config
 
-# Define API URL
-API_URL = "http://localhost:8000"
+# API_URL is now imported from config.py
 
 # --- PyDeck Map Helper Functions (Copied from streamlit_app.py for direct use) ---
 def create_geojson_feature(geometry, properties=None):

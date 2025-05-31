@@ -2,17 +2,19 @@ import streamlit as st
 import pydeck as pdk
 import json  # For sample GeoJSON
 import requests
+import os
+from datetime import datetime
+import numpy as np
 from utils.custom_styles import apply_custom_styles, apply_chart_styling, apply_map_layout, apply_widget_panel_layout
 from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
 from utils.legend_widget import show_legend_widget, check_geojson_layers_uploaded
+from config import API_URL  # Import centralized config
 
 # --- Imports für Seiten-Module ---
-import importlib
-import sys
-
-# Import der Seitenmodule (implizit, damit wir sie dynamisch laden können)
-# Stelle sicher, dass alle Seitenmodule in /pages/ liegen
-sys.path.append("pages")
+from modules.project_setup import show_project_setup
+from modules.admin import show_admin_panel, refresh_projects
+from modules.dashboard import show_dashboard
+from modules.resident_info import show_resident_info
 
 # --- Session State for the Map (Minimal) ---
 if "map_layers" not in st.session_state:
@@ -25,8 +27,13 @@ if "widget_width_percent" not in st.session_state:
     st.session_state.widget_width_percent = 35  # Default widget width (35% of screen)
 # --- End Session State ---
 
-# Configure page
-st.set_page_config(layout="wide", page_title="Baustellenverkehrs-Management-System")
+# Page Setup
+st.set_page_config(
+    page_title="Verkehrsmanagement Baustelle",
+    page_icon="🚧",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # Apply custom styles from our refactored module
 apply_custom_styles()
@@ -180,6 +187,11 @@ def create_sidebar():
             st.sidebar.write("Karten-Layer:", len(st.session_state.get("map_layers", [])))
             st.sidebar.write("Widget-Breite:", st.session_state.get("widget_width_percent", "Nicht gesetzt"))
 
+        # Debug-Info: Zeige aktuelle API-URL
+        if st.sidebar.checkbox("Debug Info anzeigen", value=False):
+            st.sidebar.info(f"**API URL:** {API_URL}")
+            st.sidebar.info(f"**Backend Status:** {'🟢 Erreichbar' if check_backend_connection() else '🔴 Nicht erreichbar'}")
+
 # --- Initialize Session State for Page Routing ---
 if "page" not in st.session_state:
     st.session_state.page = "dashboard"  # Default page
@@ -210,24 +222,23 @@ with col_widget:
     try:
         # Load the appropriate module for the current page
         if current_page == "dashboard":
-            import pages.dashboard as page_module
             if "current_project" in st.session_state:
-                page_module.show_dashboard(st.session_state.current_project)
+                show_dashboard(st.session_state.current_project)
             else:
                 st.info("Bitte wählen Sie ein Projekt aus der Seitenleiste")
         
         elif current_page == "project_setup":
-            import pages.project_setup as page_module
-            page_module.show_project_setup()
+            show_project_setup()
         
         elif current_page == "admin":
-            import pages.admin as page_module
-            page_module.show_admin()
+            if "current_project" in st.session_state:
+                show_admin_panel(st.session_state.current_project)
+            else:
+                st.info("Bitte wählen Sie ein Projekt aus der Seitenleiste")
         
         elif current_page == "resident_info":
-            import pages.resident_info as page_module
             if "current_project" in st.session_state:
-                page_module.show_resident_info(st.session_state.current_project)
+                show_resident_info(st.session_state.current_project)
             else:
                 st.info("Bitte wählen Sie ein Projekt aus der Seitenleiste")
         
@@ -311,22 +322,14 @@ st.markdown("""
 # Backend base URL and helper to fetch projects
 # -----------------------------------------------------------------------------
 
-API_URL = "http://localhost:8000"  # Base URL for backend API
+# API_URL is now imported from config.py
 
-def refresh_projects():
-    """Fetch all projects from the backend and store them in st.session_state."""
+def check_backend_connection():
+    """Test if the backend is reachable."""
     try:
-        response = requests.get(f"{API_URL}/api/projects/")
-        if response.status_code == 200:
-            st.session_state.projects = response.json() or []
-            return True
-        else:
-            st.error(f"Fehler beim Aktualisieren der Projekte: {response.status_code}")
-            st.session_state.projects = []
-            return False
-    except Exception as exc:
-        st.error(f"Fehler beim Verbinden zur API: {exc}")
-        st.session_state.projects = []
+        response = requests.get(f"{API_URL}/", timeout=5)
+        return response.status_code == 200
+    except:
         return False
 
 # -----------------------------------------------------------------------------

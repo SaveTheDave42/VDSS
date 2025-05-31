@@ -32,10 +32,10 @@ from utils.dashoboard_utils import (
 )
 from filelock import FileLock
 import re
+from config import API_URL  # Import centralized config
 
 
-# Define API URL
-API_URL = "http://localhost:8000"
+# API_URL is now imported from config.py
 
 # Set this to True to see debug info
 DEBUG_COORDS = False 
