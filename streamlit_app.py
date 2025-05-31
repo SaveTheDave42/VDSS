@@ -5,7 +5,7 @@ import requests
 import os
 from datetime import datetime
 import numpy as np
-from utils.custom_styles import apply_custom_styles, apply_chart_styling, apply_map_layout, apply_widget_panel_layout
+from utils.custom_styles import apply_custom_styles, apply_chart_styling, apply_map_layout, apply_widget_panel_layout, apply_streamlit_cloud_fixes
 from utils.map_utils import update_map_view_to_project_bounds, create_geojson_feature, create_pydeck_geojson_layer, create_pydeck_path_layer
 from utils.legend_widget import show_legend_widget, check_geojson_layers_uploaded
 from config import API_URL  # Import centralized config
@@ -60,6 +60,7 @@ st.set_page_config(
 apply_custom_styles()
 apply_chart_styling()
 apply_map_layout()
+apply_streamlit_cloud_fixes()
 
 # <<< map_placeholder is the VERY FIRST element in the main body after set_page_config >>>
 map_placeholder = st.empty()
@@ -292,49 +293,116 @@ with col_map:
 # --- Add JavaScript for Map Resizing ---
 st.markdown("""
 <script>
-    // Force map elements to full height
+    // Force map elements to full height and fix layout issues
     (function() {
         function resizeMapElements() {
-            // Target mapbox elements specifically
+            // Target all relevant map elements
             const mapboxCanvases = document.querySelectorAll('.mapboxgl-canvas');
             const mapboxContainers = document.querySelectorAll('.mapboxgl-map, .mapboxgl-canvas-container');
             const deckglWrapper = document.getElementById('deckgl-wrapper');
             const defaultView = document.getElementById('view-default-view');
+            const deckGlCharts = document.querySelectorAll('[data-testid="stDeckGlJsonChart"]');
             
             // Set height to full viewport minus header
             const targetHeight = 'calc(100vh - 80px)';
             
-            if (mapboxCanvases.length) {
-                for (let canvas of mapboxCanvases) {
-                    canvas.style.height = targetHeight;
+            // Apply to all map elements
+            [...mapboxCanvases, ...mapboxContainers].forEach(element => {
+                if (element) {
+                    element.style.height = targetHeight;
+                    element.style.width = '100%';
                 }
-            }
-            
-            if (mapboxContainers.length) {
-                for (let container of mapboxContainers) {
-                    container.style.height = targetHeight;
-                }
-            }
+            });
             
             if (deckglWrapper) {
                 deckglWrapper.style.height = targetHeight;
+                deckglWrapper.style.width = '100%';
             }
             
             if (defaultView) {
                 defaultView.style.height = targetHeight;
+                defaultView.style.width = '100%';
+            }
+            
+            // Apply to Streamlit deck.gl chart containers
+            deckGlCharts.forEach(chart => {
+                if (chart) {
+                    chart.style.height = targetHeight;
+                    chart.style.width = '100%';
+                }
+            });
+        }
+        
+        function ensureLayoutCorrectness() {
+            // Force layout corrections for Streamlit Cloud
+            const mainContainer = document.querySelector('section.main .block-container');
+            if (mainContainer) {
+                mainContainer.style.padding = '0';
+                mainContainer.style.maxWidth = '100%';
+                mainContainer.style.width = '100%';
+            }
+            
+            // Ensure map column takes full space
+            const mapColumn = document.querySelector('[data-testid="column"]:first-child');
+            if (mapColumn) {
+                mapColumn.style.width = '100%';
+                mapColumn.style.height = '100vh';
+                mapColumn.style.padding = '0';
+                mapColumn.style.margin = '0';
+            }
+            
+            // Ensure widget column is properly positioned
+            const widgetColumn = document.querySelector('[data-testid="column"]:last-child');
+            if (widgetColumn) {
+                widgetColumn.style.position = 'fixed';
+                widgetColumn.style.zIndex = '1000';
             }
         }
         
-        // Run initially
-        setTimeout(resizeMapElements, 100);
+        function initializeLayout() {
+            resizeMapElements();
+            ensureLayoutCorrectness();
+        }
+        
+        // Run initially with multiple delays to catch all loading states
+        setTimeout(initializeLayout, 100);
+        setTimeout(initializeLayout, 500);
+        setTimeout(initializeLayout, 1000);
+        setTimeout(initializeLayout, 2000);
         
         // Run on resize events
-        window.addEventListener('resize', resizeMapElements);
+        window.addEventListener('resize', initializeLayout);
         
         // Monitor for changes in the DOM that might affect the map
-        new MutationObserver(function(mutations) {
-            setTimeout(resizeMapElements, 100);
-        }).observe(document.body, {childList: true, subtree: true});
+        if (window.MutationObserver) {
+            const observer = new MutationObserver(function(mutations) {
+                let shouldUpdate = false;
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' || 
+                        (mutation.type === 'attributes' && 
+                         (mutation.attributeName === 'style' || 
+                          mutation.attributeName === 'class'))) {
+                        shouldUpdate = true;
+                    }
+                });
+                if (shouldUpdate) {
+                    setTimeout(initializeLayout, 100);
+                }
+            });
+            
+            observer.observe(document.body, {
+                childList: true, 
+                subtree: true, 
+                attributes: true,
+                attributeFilter: ['style', 'class']
+            });
+        }
+        
+        // Also trigger on Streamlit's script run completion
+        document.addEventListener('DOMContentLoaded', initializeLayout);
+        
+        // Force one more update after a longer delay for Streamlit Cloud
+        setTimeout(initializeLayout, 5000);
     })();
 </script>
 """, unsafe_allow_html=True)
