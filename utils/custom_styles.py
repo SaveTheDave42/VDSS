@@ -256,7 +256,7 @@ def apply_widget_panel_layout(widget_width_percent=35):
         height: 100% !important;
     }}
     
-    /* Floating widget panel - more robust selectors */
+    /* CRITICAL: Floating widget panel - FORCE FIXED POSITIONING */
     div[data-testid='column']:nth-of-type(2),
     div[data-testid='column']:last-child,
     div[data-testid='column']:nth-child(2) {{
@@ -273,9 +273,46 @@ def apply_widget_panel_layout(widget_width_percent=35):
         -webkit-backdrop-filter: blur(10px) !important;
         padding: 20px 16px 12px 16px !important;
         border-radius: 10px !important;
-        z-index: 1000 !important;
+        z-index: 9999 !important;
         box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
         border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        /* Force override any conflicting positioning */
+        left: auto !important;
+        bottom: auto !important;
+        transform: none !important;
+        margin: 0 !important;
+        float: none !important;
+        clear: none !important;
+    }}
+    
+    /* DOUBLE CHECK: More specific selectors for widget panel */
+    .main div[data-testid='column']:nth-of-type(2),
+    .main div[data-testid='column']:last-child,
+    .main div[data-testid='column']:nth-child(2),
+    section.main div[data-testid='column']:nth-of-type(2),
+    section.main div[data-testid='column']:last-child,
+    section.main div[data-testid='column']:nth-child(2) {{
+        position: fixed !important;
+        top: 70px !important;
+        right: 20px !important;
+        z-index: 9999 !important;
+        width: {widget_width_percent}% !important;
+        max-width: {widget_width_percent}% !important;
+        min-width: 300px !important;
+        max-height: calc(100vh - 100px) !important;
+        background: rgba(246, 247, 250, 0.97) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+        padding: 20px 16px 12px 16px !important;
+        overflow-y: auto !important;
+        /* Force remove any positioning interference */
+        left: auto !important;
+        bottom: auto !important;
+        transform: none !important;
+        margin: 0 !important;
+        float: none !important;
+        clear: none !important;
+        display: block !important;
     }}
     
     /* Ensure the widget content doesn't break the layout */
@@ -284,6 +321,8 @@ def apply_widget_panel_layout(widget_width_percent=35):
     div[data-testid='column']:nth-child(2) > div {{
         width: 100% !important;
         overflow-x: hidden !important;
+        position: relative !important;
+        z-index: 1 !important;
     }}
     
     /* Force map elements to use full space */

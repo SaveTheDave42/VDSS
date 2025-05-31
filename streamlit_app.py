@@ -235,6 +235,9 @@ apply_widget_panel_layout(st.session_state.widget_width_percent)
 
 # --- Widget Content Based on Current Page ---
 with col_widget:
+    # Debug info to check widget positioning
+    st.markdown("🔍 **Widget Debug**: Wenn dieses Panel rechts oben schwebt, funktioniert es korrekt!")
+    
     # Debug info about the currently selected page
     if st.session_state.get("debug_mode", False):
         st.write(f"DEBUG: Current page = {current_page}")
@@ -333,6 +336,44 @@ st.markdown("""
             });
         }
         
+        function forceWidgetPositioning() {
+            // CRITICAL: Force widget panel to be positioned correctly
+            const widgetColumns = document.querySelectorAll('[data-testid="column"]:last-child, [data-testid="column"]:nth-child(2), [data-testid="column"]:nth-of-type(2)');
+            
+            widgetColumns.forEach(widget => {
+                if (widget) {
+                    // Force fixed positioning with high priority
+                    widget.style.setProperty('position', 'fixed', 'important');
+                    widget.style.setProperty('top', '70px', 'important');
+                    widget.style.setProperty('right', '20px', 'important');
+                    widget.style.setProperty('z-index', '9999', 'important');
+                    widget.style.setProperty('width', '30%', 'important');
+                    widget.style.setProperty('max-width', '30%', 'important');
+                    widget.style.setProperty('min-width', '300px', 'important');
+                    widget.style.setProperty('max-height', 'calc(100vh - 100px)', 'important');
+                    widget.style.setProperty('background', 'rgba(246, 247, 250, 0.97)', 'important');
+                    widget.style.setProperty('border-radius', '10px', 'important');
+                    widget.style.setProperty('padding', '20px 16px 12px 16px', 'important');
+                    widget.style.setProperty('box-shadow', '0 4px 20px rgba(0,0,0,0.15)', 'important');
+                    widget.style.setProperty('overflow-y', 'auto', 'important');
+                    
+                    // Remove any conflicting properties
+                    widget.style.setProperty('left', 'auto', 'important');
+                    widget.style.setProperty('bottom', 'auto', 'important');
+                    widget.style.setProperty('transform', 'none', 'important');
+                    widget.style.setProperty('margin', '0', 'important');
+                    widget.style.setProperty('float', 'none', 'important');
+                    widget.style.setProperty('clear', 'none', 'important');
+                    widget.style.setProperty('display', 'block', 'important');
+                    
+                    // Debug: Add a red border to see if it's working
+                    // widget.style.setProperty('border', '3px solid red', 'important');
+                    
+                    console.log('✅ Widget positioned:', widget);
+                }
+            });
+        }
+        
         function ensureLayoutCorrectness() {
             // Force layout corrections for Streamlit Cloud
             const mainContainer = document.querySelector('section.main .block-container');
@@ -351,17 +392,16 @@ st.markdown("""
                 mapColumn.style.margin = '0';
             }
             
-            // Ensure widget column is properly positioned
-            const widgetColumn = document.querySelector('[data-testid="column"]:last-child');
-            if (widgetColumn) {
-                widgetColumn.style.position = 'fixed';
-                widgetColumn.style.zIndex = '1000';
-            }
+            // Force widget positioning
+            forceWidgetPositioning();
         }
         
         function initializeLayout() {
             resizeMapElements();
             ensureLayoutCorrectness();
+            
+            // Extra widget positioning call with delay
+            setTimeout(forceWidgetPositioning, 50);
         }
         
         // Run initially with multiple delays to catch all loading states
@@ -369,6 +409,12 @@ st.markdown("""
         setTimeout(initializeLayout, 500);
         setTimeout(initializeLayout, 1000);
         setTimeout(initializeLayout, 2000);
+        
+        // Extra widget positioning calls
+        setTimeout(forceWidgetPositioning, 100);
+        setTimeout(forceWidgetPositioning, 500);
+        setTimeout(forceWidgetPositioning, 1000);
+        setTimeout(forceWidgetPositioning, 3000);
         
         // Run on resize events
         window.addEventListener('resize', initializeLayout);
@@ -387,6 +433,7 @@ st.markdown("""
                 });
                 if (shouldUpdate) {
                     setTimeout(initializeLayout, 100);
+                    setTimeout(forceWidgetPositioning, 150);
                 }
             });
             
@@ -403,6 +450,10 @@ st.markdown("""
         
         // Force one more update after a longer delay for Streamlit Cloud
         setTimeout(initializeLayout, 5000);
+        setTimeout(forceWidgetPositioning, 5500);
+        
+        // Debug log
+        console.log('🚧 Widget positioning script loaded');
     })();
 </script>
 """, unsafe_allow_html=True)
