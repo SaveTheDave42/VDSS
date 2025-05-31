@@ -131,8 +131,8 @@ def build_segments_for_hour(hour, project, base_osm_segments, date_str, get_traf
             "traffic_volume": segment.get("traffic_volume", 0),
             "congestion": congestion,
             "color": color,
-            # PathLayer width in px – narrower when high congestion
-            "width": max(2, 8 - (congestion * 5))
+            # PathLayer width in px – constant width for all routes
+            "width": 8
         })
 
     return segments_data
