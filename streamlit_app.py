@@ -16,6 +16,27 @@ from modules.admin import show_admin_panel, refresh_projects
 from modules.dashboard import show_dashboard
 from modules.resident_info import show_resident_info
 
+# Debug: API-URL beim Start ausgeben
+debug_mode = os.getenv("DEBUG", "false").lower() == "true"
+if debug_mode:
+    st.write(f"🔧 **Debug-Modus aktiv**")
+    st.write(f"**API URL:** {API_URL}")
+    
+    # Überprüfe verschiedene Konfigurationsquellen
+    secrets_url = None
+    try:
+        if hasattr(st, 'secrets') and 'STREAMLIT_API_URL' in st.secrets:
+            secrets_url = st.secrets['STREAMLIT_API_URL']
+    except:
+        pass
+    
+    env_url = os.getenv("STREAMLIT_API_URL")
+    cloud_mode = os.getenv("STREAMLIT_SHARING_MODE") or os.getenv("STREAMLIT_CLOUD")
+    
+    st.write(f"**Secrets URL:** {secrets_url or 'Nicht verfügbar'}")
+    st.write(f"**Env Variable:** {env_url or 'Nicht gesetzt'}")
+    st.write(f"**Cloud Mode:** {cloud_mode or 'Nicht erkannt'}")
+
 # --- Session State for the Map (Minimal) ---
 if "map_layers" not in st.session_state:
     st.session_state.map_layers = []

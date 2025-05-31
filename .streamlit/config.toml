@@ -1,24 +1,26 @@
 [theme]
 base = "light"
 # Zurich Blue - Primary accent color
-primaryColor = "#0F05A0"
+primaryColor = "#ff6b6b"
 # Main background (white)
-backgroundColor = "#FFFFFF"
+backgroundColor = "#ffffff"
 # Panels / widget containers (light grey)
-secondaryBackgroundColor = "#F6F7FA"
+secondaryBackgroundColor = "#f0f2f6"
 # Standard text color (dark grey)
-textColor = "#212529"
+textColor = "#262730"
 # Global font family (falls back to system sans-serif)
 font = "sans serif"
 
 # You can keep adding other non-theme settings here, e.g.
 [server]
 # Uncomment to enable headless mode
-# headless = true
+headless = true
+port = 8501
 
 [browser]
 # Use a larger timeout for data loading
 serverTimeout = 300
+gatherUsageStats = false
 
 [mapbox]
 # Replace with your actual token if using custom mapbox styles
