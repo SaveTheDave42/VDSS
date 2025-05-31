@@ -6,15 +6,32 @@ import streamlit as st
 def get_api_url():
     # Versuche zuerst Streamlit Secrets zu lesen
     try:
+        # Prüfe ob st.secrets verfügbar ist und die URL enthält
+        if hasattr(st, 'secrets') and hasattr(st.secrets, 'get'):
+            api_url = st.secrets.get('STREAMLIT_API_URL')
+            if api_url and api_url.strip():
+                return api_url.strip()
+        
+        # Alternative Methode für Streamlit Secrets
         if hasattr(st, 'secrets') and 'STREAMLIT_API_URL' in st.secrets:
-            return st.secrets['STREAMLIT_API_URL']
-    except:
+            api_url = st.secrets['STREAMLIT_API_URL']
+            if api_url and api_url.strip():
+                return api_url.strip()
+    except Exception as e:
+        # Bei Problemen mit Secrets - weiter zu Environment Variable
+        print(f"Fehler beim Lesen der Streamlit Secrets: {e}")
         pass
     
     # Fallback auf Umgebungsvariable
     api_url = os.getenv("STREAMLIT_API_URL")
-    if api_url:
-        return api_url
+    if api_url and api_url.strip():
+        return api_url.strip()
+    
+    # Zusätzlicher Fallback: Prüfe ob wir in einer Cloud-Umgebung sind
+    # und verwende eine bekannte Backend-URL
+    if os.getenv("STREAMLIT_SHARING_MODE") or os.getenv("STREAMLIT_CLOUD"):
+        # Für Streamlit Cloud Deployment - verwende die bekannte Backend URL
+        return "https://vdss-4ovd.onrender.com"
     
     # Standard-Fallback für lokale Entwicklung
     return "http://localhost:8000"
