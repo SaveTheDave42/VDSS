@@ -235,8 +235,6 @@ apply_widget_panel_layout(st.session_state.widget_width_percent)
 
 # --- Widget Content Based on Current Page ---
 with col_widget:
-    # Debug info to check widget positioning
-    st.markdown("🔍 **Widget Debug**: Wenn dieses Panel rechts oben schwebt, funktioniert es korrekt!")
     
     # Debug info about the currently selected page
     if st.session_state.get("debug_mode", False):
