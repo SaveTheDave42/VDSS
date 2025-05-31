@@ -22,4 +22,23 @@ def get_api_url():
 API_URL = get_api_url()
 
 # Debug-Modus
-DEBUG = os.getenv("DEBUG", "false").lower() == "true" 
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+
+# Mock-Modus: Wenn True, funktioniert die App ohne Backend
+# Wird automatisch aktiviert wenn Backend nicht erreichbar ist
+MOCK_MODE = os.getenv("MOCK_MODE", "auto").lower()
+
+def is_mock_mode_enabled():
+    """Prüft ob Mock-Modus aktiviert werden soll"""
+    if MOCK_MODE == "true":
+        return True
+    elif MOCK_MODE == "false":
+        return False
+    else:  # "auto"
+        # Auto-detect: Prüfe ob Backend erreichbar ist
+        try:
+            import requests
+            response = requests.get(f"{API_URL}/", timeout=3)
+            return response.status_code != 200
+        except:
+            return True  # Backend nicht erreichbar -> Mock-Modus 
