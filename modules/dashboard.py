@@ -336,8 +336,8 @@ def _render_traffic_tab(project):
         <div class="kpi-card" data-tooltip="Verkehrsaufkommen auf den Zufahrtsstrassen zur Baustelle pro Tag">
             <h4>Zufahrtsverkehr (Tag)</h4><p>{access_traffic_day:.2f}</p>
         </div>
-        <div class="kpi-card" data-tooltip="Anzahl der Baustellenfahrzeuge basierend auf Material-Lieferungen">
-            <h4>Baustellenverkehr</h4><p>{construction_traffic_day}</p>
+        <div class="kpi-card" data-tooltip="Anzahl der Fahrten von Baustellenfahrzeugen basierend auf Material-Lieferungen">
+            <h4>Baustellenverkehr</h4><p>{construction_traffic_day * 2}</p>
         </div>
         <div class="kpi-card" data-tooltip="Anteil des Baustellenverkehrs am gesamten Zufahrtsverkehr in Prozent">
             <h4>Baustellenanteil</h4><p>{construction_share_pct_day:.1f}%</p>
