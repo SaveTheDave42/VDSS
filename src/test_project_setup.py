@@ -19,7 +19,9 @@ sys.path.append(project_root)
 
 # Importiere notwendige Funktionen und Klassen (simuliert)
 # Annahme: Die Logik ist in diesen Modulen verfügbar
-from pages.project_setup import show_project_setup, create_project # Simuliert
+# Importiere die Seitenmodule aus dem neuen 'modules'-Package. Früher lagen
+# diese unter 'pages', daher stellen wir hier die aktualisierten Importe sicher.
+from modules.project_setup import show_project_setup, create_project_from_session_state as create_project
 from src.prepare_profiles import create_profile_id, sanitize_filename_component # Tatsächlich importiert
 
 # Hilfsfunktionen zum Simulieren von Streamlit-Session-State

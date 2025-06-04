@@ -32,6 +32,7 @@ Das Baustellenverkehrs-Management-System (VDSS - Verkehrsdaten-Simulations-Syste
 - **Vereinfachte Verkehrsübersicht** für betroffene Anwohner
 - **Wochenübersicht** mit Verkehrsstatus (Niedrig/Mäßig/Stark)
 - **Bauzeitplan-Integration** mit Material- und Personalprognosen
+- **Smartphone-optimiertes Layout** für das Anwohner-Info-Modul
 
 ## 🛠️ Technologie-Stack
 
