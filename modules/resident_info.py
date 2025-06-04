@@ -30,6 +30,27 @@ def show_resident_info(project):
     
     # Apply chart styling for this page
     apply_chart_styling()
+
+    # Additional mobile friendly tweaks for the floating widget panel
+    st.markdown("""
+    <style>
+    @media (max-width: 480px) {
+        /* Position widget panel at the bottom on very small screens */
+        div[data-testid='column']:nth-of-type(2),
+        div[data-testid='column']:last-child,
+        div[data-testid='column']:nth-child(2) {
+            width: 100% !important;
+            max-width: 100% !important;
+            right: 0 !important;
+            left: 0 !important;
+            top: auto !important;
+            bottom: 0 !important;
+            max-height: 60vh !important;
+            border-radius: 10px 10px 0 0 !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     st.markdown(f"<h2 style='text-align: center;'>Baustellenverkehr Informationen</h2>", unsafe_allow_html=True)
     st.markdown(f"<h3 style='text-align: center;'>{project['name']}</h3>", unsafe_allow_html=True)
